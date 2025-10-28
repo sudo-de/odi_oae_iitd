@@ -1,0 +1,205 @@
+/* Table Styles */
+.table-container {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  overflow: visible;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  position: relative;
+  z-index: 1;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+
+.users-table thead {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.users-table th {
+  padding: 1.5rem 2rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #e1e5e9;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.users-table th.sortable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.users-table th.sortable:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.users-table td {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e1e5e9;
+  vertical-align: middle;
+  font-size: 1.1rem;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.users-table td:last-child {
+  overflow: visible;
+  white-space: normal;
+  width: 120px;
+  min-width: 120px;
+}
+
+.users-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.users-table tbody tr:hover {
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.users-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Action Menu Styles */
+.action-menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.action-menu-trigger {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+  white-space: nowrap;
+  min-width: 40px;
+  text-align: center;
+}
+
+.action-menu-trigger:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
+}
+
+.action-menu {
+  position: absolute;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e1e5e9;
+  min-width: 160px;
+  z-index: 1001;
+  overflow: visible;
+  animation: slideDown 0.2s ease;
+  max-height: none;
+}
+
+.action-menu-bottom {
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+}
+
+.action-menu-top {
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-item {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  color: #333;
+  white-space: nowrap;
+  overflow: visible;
+  position: relative;
+}
+
+.menu-item::before,
+.menu-item::after {
+  content: none !important;
+  display: none !important;
+}
+
+.menu-item:hover {
+  background: #f8f9fa;
+  color: #667eea;
+}
+
+.menu-item:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.menu-item:last-child {
+  border-radius: 0 0 8px 8px;
+}
+
+.menu-item.view:hover {
+  background: rgba(52, 144, 220, 0.1);
+  color: #3490dc;
+}
+
+.menu-item.edit:hover {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.menu-item.toggle-status:hover {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+}
+
+.menu-item.delete:hover {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}

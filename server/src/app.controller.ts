@@ -1,0 +1,35 @@
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+
+  @Get('health')
+  getHealth(): object {
+    return { 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      database: 'MongoDB',
+      environment: process.env.NODE_ENV || 'development'
+    };
+  }
+
+  @Get('api')
+  getApiInfo(): object {
+    return {
+      name: 'IITD API',
+      version: '1.0.0',
+      description: 'NestJS API with MongoDB integration',
+      endpoints: {
+        users: '/users',
+        health: '/health'
+      }
+    };
+  }
+}

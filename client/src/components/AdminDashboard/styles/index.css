@@ -1,0 +1,10 @@
+/* AdminDashboard Main Styles */
+/* Import all style modules */
+@import './layout/main-layout.css';
+@import './components/dashboard-overview.css';
+@import './components/user-management.css';
+@import './components/driver-dashboard.css';
+@import './components/table.css';
+@import './modals/modals.css';
+@import './forms/forms.css';
+@import './utils/utilities.css';
