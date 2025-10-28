@@ -14,7 +14,7 @@
 }
 
 .driver-stat {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #eaebec 0%, #fcfcfc 100%);
   color: white;
   border-radius: 15px;
   padding: 1.5rem;
@@ -40,7 +40,7 @@
   font-size: 0.9rem;
   font-weight: 500;
   opacity: 0.9;
-  color: white;
+  color: rgb(0, 0, 0);
 }
 
 .driver-stat .stat-number {

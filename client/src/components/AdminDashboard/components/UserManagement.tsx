@@ -6,6 +6,7 @@ import UserTable from './UserTable';
 interface UserManagementProps {
   users: User[];
   error: string;
+  sidebarCollapsed: boolean;
   onToggleMenu: (userId: string, event: React.MouseEvent) => void;
   onViewUser: (user: User) => void;
   onEditUser: (user: User) => void;
@@ -19,6 +20,7 @@ interface UserManagementProps {
 const UserManagement: React.FC<UserManagementProps> = ({
   users,
   error,
+  sidebarCollapsed,
   onToggleMenu,
   onViewUser,
   onEditUser,
@@ -31,6 +33,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<keyof User>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
 
   const handleSort = (field: keyof User) => {
     if (sortBy === field) {
@@ -41,7 +44,10 @@ const UserManagement: React.FC<UserManagementProps> = ({
     }
   };
 
-  const filteredUsers = filterAndSortUsers(users, searchTerm, sortBy, sortOrder);
+  const filteredUsers = filterAndSortUsers(users, searchTerm, sortBy, sortOrder).filter(user => {
+    if (roleFilter === 'all') return true;
+    return user.role === roleFilter;
+  });
 
   return (
     <div className="users-tab">
@@ -54,11 +60,44 @@ const UserManagement: React.FC<UserManagementProps> = ({
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        <div className="role-filters">
+          <button 
+            className={`role-filter-btn ${roleFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setRoleFilter('all')}
+          >
+            All
+          </button>
+          <button 
+            className={`role-filter-btn ${roleFilter === 'admin' ? 'active' : ''}`}
+            onClick={() => setRoleFilter('admin')}
+          >
+            Admins
+          </button>
+          <button 
+            className={`role-filter-btn ${roleFilter === 'staff' ? 'active' : ''}`}
+            onClick={() => setRoleFilter('staff')}
+          >
+            Staffs
+          </button>
+          <button 
+            className={`role-filter-btn ${roleFilter === 'student' ? 'active' : ''}`}
+            onClick={() => setRoleFilter('student')}
+          >
+            Students
+          </button>
+          <button 
+            className={`role-filter-btn ${roleFilter === 'driver' ? 'active' : ''}`}
+            onClick={() => setRoleFilter('driver')}
+          >
+            Drivers
+          </button>
+        </div>
         <button 
-          className="create-user-btn"
+          className={`create-user-btn ${sidebarCollapsed ? 'compact' : ''}`}
           onClick={onShowCreateUser}
+          title={sidebarCollapsed ? 'Create User' : ''}
         >
-          Create User
+          {sidebarCollapsed ? '+' : '+'}
         </button>
       </div>
 

@@ -9,6 +9,7 @@ import { calculateStats } from './utils';
 import DashboardOverview from './components/DashboardOverview';
 import UserManagement from './components/UserManagement';
 import DriverDashboard from './components/DriverDashboard';
+import RideLocationDashboard from './components/RideLocationDashboard';
 import Settings from './components/Settings';
 import CreateUserModal from './components/CreateUserModal';
 import EditUserModal from './components/EditUserModal';
@@ -18,7 +19,7 @@ import './styles/index.css';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   // Custom hooks
   const {
@@ -174,8 +175,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
       <Sidebar 
         user={user}
         activeTab={activeTab}
-        sidebarCollapsed={sidebarCollapsed}
         onTabChange={setActiveTab}
+        isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
@@ -183,7 +184,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
         <div className="content-header">
           <h1>{activeTab === 'overview' ? 'Dashboard Overview' : 
                 activeTab === 'users' ? 'User Management' : 
-                'System Settings'}</h1>
+                activeTab === 'driver' ? 'Driver Dashboard' : 
+                activeTab === 'driver-ride-location' ? 'Ride Location Management' :
+                activeTab === 'settings' ? 'System Settings' :
+                'Dashboard'}</h1>
           <div className="header-actions">
             <div className="quick-stats">
               <span className="stat-item">
@@ -202,6 +206,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
             <UserManagement
               users={users}
               error={error}
+              sidebarCollapsed={sidebarCollapsed}
               onToggleMenu={toggleMenu}
               onViewUser={handleViewUserClick}
               onEditUser={handleEditUserClick}
@@ -217,9 +222,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
             <DriverDashboard users={users} />
           )}
 
+          {activeTab === 'driver-ride-location' && (
+            <RideLocationDashboard />
+          )}
+
           {activeTab === 'settings' && (
             <Settings users={users} />
           )}
+
         </div>
       </div>
 

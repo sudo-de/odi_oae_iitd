@@ -3,7 +3,7 @@
   background: white;
   border-radius: 20px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  overflow: visible;
+  overflow-x: auto;
   border: 1px solid rgba(102, 126, 234, 0.1);
   position: relative;
   z-index: 1;
@@ -46,7 +46,9 @@
   border-bottom: 1px solid #e1e5e9;
   vertical-align: middle;
   font-size: 1.1rem;
-  overflow: visible;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -199,7 +201,34 @@
   color: #28a745;
 }
 
-.menu-item.delete:hover {
-  background: rgba(220, 53, 69, 0.1);
-  color: #dc3545;
+/* Responsive Design for Sidebar Collapsed */
+@media (max-width: 1200px) {
+  .users-table td {
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    max-width: 150px;
+  }
+  
+  .users-table th {
+    padding: 1rem 1.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .users-table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    max-width: 120px;
+  }
+  
+  .users-table th {
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .users-table td:last-child {
+    width: 100px;
+    min-width: 100px;
+  }
 }

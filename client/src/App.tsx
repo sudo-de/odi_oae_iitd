@@ -42,15 +42,6 @@ function App() {
     <div className="app">
       {isAuthenticated ? (
         <div>
-          <nav className="navbar">
-            <h1>IITD User Management System</h1>
-            <div className="nav-right">
-              <span className="user-welcome">Welcome, {user?.name}</span>
-              <button onClick={handleLogout} className="logout-btn">
-                Logout
-              </button>
-            </div>
-          </nav>
           {user?.role === 'admin' ? (
             <AdminDashboard token={token!} user={user} />
           ) : (
