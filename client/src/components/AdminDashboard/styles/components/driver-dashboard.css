@@ -47,7 +47,7 @@
   font-size: 2rem;
   font-weight: 700;
   margin: 0;
-  color: white;
+  color: #2c3e50;
 }
 
 /* Driver Analysis */
@@ -335,6 +335,32 @@
   font-size: 1.1rem;
 }
 
+.no-drivers-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.no-drivers-icon-large {
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.3;
+}
+
+.no-drivers-state h2 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  font-size: 1.8rem;
+}
+
+.no-drivers-state p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
 /* Driver Actions */
 .driver-actions {
   background: white;
@@ -398,6 +424,40 @@
 
 .btn-text {
   font-weight: 500;
+}
+
+/* Ride Bills Section */
+.ride-bills-section {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.ride-bills-section h3 {
+  margin: 0 0 1.5rem 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* Status Badge */
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background: #28a745;
+  color: white;
+}
+
+.status-badge.inactive {
+  background: #dc3545;
+  color: white;
 }
 
 /* Responsive Design */

@@ -103,6 +103,14 @@ const Sidebar: React.FC<SidebarProps> = ({ user, activeTab, onTabChange, isColla
           </div>
         </div>
         <button 
+          className={`nav-item ${activeTab === 'ride-bills' ? 'active' : ''}`}
+          onClick={() => onTabChange('ride-bills')}
+          title={isCollapsed ? 'Ride Bills' : ''}
+        >
+          <span className="nav-icon">📋</span>
+          {!isCollapsed && <span className="nav-text">Ride Bills</span>}
+        </button>
+        <button 
           className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => onTabChange('settings')}
           title={isCollapsed ? 'Settings' : ''}

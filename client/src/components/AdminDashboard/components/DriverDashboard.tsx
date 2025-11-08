@@ -30,6 +30,18 @@ const DriverDashboard: React.FC<DriverDashboardProps> = ({ users }) => {
     .slice(0, 5);
 
 
+  if (drivers.length === 0) {
+    return (
+      <div className="driver-dashboard">
+        <div className="no-drivers-state">
+          <div className="no-drivers-icon-large">🚗</div>
+          <h2>No Drivers Found</h2>
+          <p>There are no drivers registered in the system yet.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="driver-dashboard">
       {/* Driver Statistics */}
@@ -114,6 +126,7 @@ const DriverDashboard: React.FC<DriverDashboardProps> = ({ users }) => {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>

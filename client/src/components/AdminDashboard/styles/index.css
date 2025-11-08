@@ -5,6 +5,7 @@
 @import './components/user-management.css';
 @import './components/driver-dashboard.css';
 @import './components/ride-location-dashboard.css';
+@import './components/ride-bills.css';
 @import './components/table.css';
 @import './modals/modals.css';
 @import './forms/forms.css';

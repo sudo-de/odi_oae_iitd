@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { RideLocationsModule } from './ride-locations/ride-locations.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuthModule } from './auth/auth.module';
     MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/iitd-db'),
     UsersModule,
     AuthModule,
+    RideLocationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

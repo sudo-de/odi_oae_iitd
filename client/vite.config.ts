@@ -4,4 +4,17 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    preserveSymlinks: true,
+  },
+  server: {
+    fs: {
+      // Allow serving files from the workspace root (for npm workspaces)
+      allow: ['..'],
+    },
+  },
+  optimizeDeps: {
+    // Force Vite to resolve dependencies from workspace root
+    force: true,
+  },
 })

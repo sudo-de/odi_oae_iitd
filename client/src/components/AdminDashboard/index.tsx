@@ -10,6 +10,7 @@ import DashboardOverview from './components/DashboardOverview';
 import UserManagement from './components/UserManagement';
 import DriverDashboard from './components/DriverDashboard';
 import RideLocationDashboard from './components/RideLocationDashboard';
+import RideBillsDashboard from './components/RideBillsDashboard';
 import Settings from './components/Settings';
 import CreateUserModal from './components/CreateUserModal';
 import EditUserModal from './components/EditUserModal';
@@ -186,6 +187,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
                 activeTab === 'users' ? 'User Management' : 
                 activeTab === 'driver' ? 'Driver Dashboard' : 
                 activeTab === 'driver-ride-location' ? 'Ride Location Management' :
+                activeTab === 'ride-bills' ? 'Ride Bills' :
                 activeTab === 'settings' ? 'System Settings' :
                 'Dashboard'}</h1>
           <div className="header-actions">
@@ -225,7 +227,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
           )}
 
           {activeTab === 'driver-ride-location' && (
-            <RideLocationDashboard />
+            <RideLocationDashboard token={token} />
+          )}
+
+          {activeTab === 'ride-bills' && (
+            <RideBillsDashboard users={users} />
           )}
 
           {activeTab === 'settings' && (

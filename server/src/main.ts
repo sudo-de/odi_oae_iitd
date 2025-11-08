@@ -1,8 +1,30 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe, HttpException, HttpStatus } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Enable global validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false, // Changed to false to allow extra fields without errors
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true, // Automatically convert types
+      },
+      exceptionFactory: (errors) => {
+        const messages = errors.map(error => {
+          return Object.values(error.constraints || {}).join(', ');
+        });
+        return new HttpException(
+          { message: messages.join('; '), errors },
+          HttpStatus.BAD_REQUEST,
+        );
+      },
+    }),
+  );
   
   // Enable CORS for frontend communication (React + Flutter)
   app.enableCors({
