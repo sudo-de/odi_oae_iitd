@@ -18,7 +18,7 @@ export interface User {
     filename: string;
     mimetype: string;
     size: number;
-    data: any; // Use any instead of Buffer for client-side
+    data: string; // Base64 encoded string from server
   };
 
   // Student-specific fields
@@ -42,7 +42,7 @@ export interface User {
     filename: string;
     mimetype: string;
     size: number;
-    data: any; // Use any instead of Buffer for client-side
+    data: string; // Base64 encoded string from server
   };
   expiryDate?: string;
   isExpired?: boolean;

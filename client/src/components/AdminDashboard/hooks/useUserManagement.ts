@@ -129,6 +129,44 @@ export const useUserManagement = (token: string) => {
     }
   };
 
+  const generateQRCodeForDriver = async (driverId: string) => {
+    try {
+      await axios.post(`http://localhost:3000/users/${driverId}/generate-qr`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      await fetchUsers();
+      showNotification('success', 'QR code generated successfully!');
+      return true;
+    } catch (err: any) {
+      showNotification('error', err.response?.data?.message || 'Failed to generate QR code');
+      return false;
+    }
+  };
+
+  const generateQRCodesForAllDrivers = async () => {
+    try {
+      const response = await axios.post('http://localhost:3000/users/drivers/generate-qr-codes', {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      await fetchUsers();
+      const { success, failed } = response.data;
+      if (success > 0) {
+        showNotification('success', `Successfully generated ${success} QR code(s)!`);
+      }
+      if (failed > 0) {
+        showNotification('error', `Failed to generate ${failed} QR code(s)`);
+      }
+      return true;
+    } catch (err: any) {
+      showNotification('error', err.response?.data?.message || 'Failed to generate QR codes');
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -144,6 +182,8 @@ export const useUserManagement = (token: string) => {
     updateUser,
     deleteUser,
     toggleUserStatus,
+    generateQRCodeForDriver,
+    generateQRCodesForAllDrivers,
     showNotification
   };
 };

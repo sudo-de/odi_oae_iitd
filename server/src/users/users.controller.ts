@@ -1,16 +1,58 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+  Req,
+  BadRequestException,
+  Sse,
+  MessageEvent
+} from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { UsersService } from './users.service';
+import { UsersService, UserChangeEvent } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { Request } from 'express';
+import { Types } from 'mongoose';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  private resolveUserId(id: string, req: Request): string {
+    if (id === 'me') {
+      const user: any = req.user;
+      const resolvedId = user?._id
+        ? typeof user._id === 'string'
+          ? user._id
+          : user._id.toString()
+        : user?.id;
+
+      if (!resolvedId) {
+        throw new BadRequestException('Authenticated user id is not available');
+      }
+
+      return resolvedId;
+    }
+
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid user id');
+    }
+
+    return id;
+  }
 
   @Post()
   @UseInterceptors(FilesInterceptor('files', 2, {
@@ -43,29 +85,34 @@ export class UsersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  findOne(@Param('id') id: string, @Req() req: Request) {
+    const resolvedId = this.resolveUserId(id, req);
+    return this.usersService.findOne(resolvedId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Req() req: Request) {
+    const resolvedId = this.resolveUserId(id, req);
+    return this.usersService.update(resolvedId, updateUserDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  remove(@Param('id') id: string, @Req() req: Request) {
+    const resolvedId = this.resolveUserId(id, req);
+    return this.usersService.remove(resolvedId);
   }
 
   // Additional MongoDB update endpoints
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() body: { isActive: boolean }) {
-    return this.usersService.updateUserStatus(id, body.isActive);
+  updateStatus(@Param('id') id: string, @Body() body: { isActive: boolean }, @Req() req: Request) {
+    const resolvedId = this.resolveUserId(id, req);
+    return this.usersService.updateUserStatus(resolvedId, body.isActive);
   }
 
   @Patch(':id/role')
-  updateRole(@Param('id') id: string, @Body() body: { role: string }) {
-    return this.usersService.updateUserRole(id, body.role);
+  updateRole(@Param('id') id: string, @Body() body: { role: string }, @Req() req: Request) {
+    const resolvedId = this.resolveUserId(id, req);
+    return this.usersService.updateUserRole(resolvedId, body.role);
   }
 
   @Post('bulk-update')
@@ -76,5 +123,25 @@ export class UsersController {
   @Get('stats/overview')
   getUserStats() {
     return this.usersService.getUserStats();
+  }
+
+  @Post(':id/generate-qr')
+  async generateQRCode(@Param('id') id: string, @Req() req: Request) {
+    const resolvedId = this.resolveUserId(id, req);
+    const qrCode = await this.usersService.generateQRCodeForDriver(resolvedId);
+    return { qrCode };
+  }
+
+  @Post('drivers/generate-qr-codes')
+  async generateQRCodesForAllDrivers() {
+    const result = await this.usersService.generateQRCodesForAllDrivers();
+    return result;
+  }
+
+  @Sse('stream')
+  streamUsers(): Observable<MessageEvent> {
+    return this.usersService.watchUsers().pipe(
+      map((event: UserChangeEvent) => ({ data: event }))
+    );
   }
 }

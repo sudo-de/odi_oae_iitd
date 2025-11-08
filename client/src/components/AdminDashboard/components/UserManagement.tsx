@@ -55,10 +55,40 @@ const UserManagement: React.FC<UserManagementProps> = ({
         <div className="search-box">
           <input
             type="text"
-            placeholder="Search users..."
+            placeholder="Search users, email, ID, entry number, UDID, phone, or scan QR/barcode..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchTerm(value);
+              
+              // Auto-detect and handle QR code JSON when typing
+              if (value.trim().startsWith('{') && value.trim().endsWith('}')) {
+                try {
+                  const parsed = JSON.parse(value.trim());
+                  if (parsed.driverId || parsed.email || parsed.name) {
+                    // Valid QR code JSON, keep it as is
+                    return;
+                  }
+                } catch {
+                  // Not valid JSON yet, continue typing
+                }
+              }
+            }}
+            onPaste={(e) => {
+              // Handle pasted QR code data
+              const pastedText = e.clipboardData.getData('text').trim();
+              try {
+                const parsed = JSON.parse(pastedText);
+                if (parsed && typeof parsed === 'object' && (parsed.driverId || parsed.email || parsed.name)) {
+                  e.preventDefault();
+                  setSearchTerm(pastedText);
+                }
+              } catch {
+                // Not QR code JSON, allow normal paste
+              }
+            }}
           />
+          <span className="search-icon" title="Supports QR code/barcode scanning">📷</span>
         </div>
         <div className="role-filters">
           <button 

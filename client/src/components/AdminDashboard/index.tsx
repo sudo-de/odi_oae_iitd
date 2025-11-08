@@ -219,7 +219,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
           )}
 
           {activeTab === 'driver' && (
-            <DriverDashboard users={users} />
+            <DriverDashboard 
+              users={users} 
+            />
           )}
 
           {activeTab === 'driver-ride-location' && (

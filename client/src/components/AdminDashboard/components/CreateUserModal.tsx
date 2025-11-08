@@ -93,19 +93,17 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({
                 required
               />
             </div>
-            {(createUserData.role === 'admin' || createUserData.role === 'staff') && (
-              <div className="form-group">
-                <label htmlFor="password">Password:</label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={createUserData.password}
-                  onChange={onInputChange}
-                  required
-                />
-              </div>
-            )}
+            <div className="form-group">
+              <label htmlFor="password">Password:</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={createUserData.password}
+                onChange={onInputChange}
+                required
+              />
+            </div>
           </div>
 
           {/* Contact Information - Common for all */}

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { User } from '../types';
 import { formatDate } from '../utils';
+import QRCodeModal from './QRCodeModal';
 
 interface UserDetailsModalProps {
   show: boolean;
@@ -13,7 +14,18 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   viewingUser,
   onClose
 }) => {
+  const [showQRModal, setShowQRModal] = useState(false);
+
   if (!show || !viewingUser) return null;
+
+  // Helper function to get data URL from base64 string
+  const getDataUrl = (base64Data: string, mimetype: string): string => {
+    if (!base64Data) return '';
+    // If it's already a data URL, return as is
+    if (base64Data.startsWith('data:')) return base64Data;
+    // Otherwise, create data URL from base64
+    return `data:${mimetype};base64,${base64Data}`;
+  };
 
   return (
     <div className="modal-overlay">
@@ -170,26 +182,52 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
               {(viewingUser.profilePhoto || viewingUser.disabilityDocument) && (
                 <div className="details-section">
                   <h4>Files</h4>
-                  <div className="file-info-grid">
-                    {viewingUser.profilePhoto && (
-                      <div className="file-info-item">
-                        <div className="file-icon">📷</div>
-                        <div className="file-details">
-                          <div className="file-name">{viewingUser.profilePhoto.filename}</div>
-                          <div className="file-meta">
-                            {viewingUser.profilePhoto.mimetype} • {(viewingUser.profilePhoto.size / 1024).toFixed(1)} KB
+                  <div className="file-preview-grid">
+                    {viewingUser.profilePhoto && viewingUser.profilePhoto.data && (
+                      <div className="file-preview-item">
+                        <div className="file-preview-header">
+                          <div className="file-icon">📷</div>
+                          <div className="file-details">
+                            <div className="file-name">{viewingUser.profilePhoto.filename}</div>
+                            <div className="file-meta">
+                              {viewingUser.profilePhoto.mimetype} • {(viewingUser.profilePhoto.size / 1024).toFixed(1)} KB
+                            </div>
                           </div>
+                        </div>
+                        <div className="file-preview-content">
+                          <img 
+                            src={getDataUrl(viewingUser.profilePhoto.data, viewingUser.profilePhoto.mimetype)} 
+                            alt="Profile Photo"
+                            className="file-preview-image"
+                          />
                         </div>
                       </div>
                     )}
-                    {viewingUser.disabilityDocument && (
-                      <div className="file-info-item">
-                        <div className="file-icon">📄</div>
-                        <div className="file-details">
-                          <div className="file-name">{viewingUser.disabilityDocument.filename}</div>
-                          <div className="file-meta">
-                            {viewingUser.disabilityDocument.mimetype} • {(viewingUser.disabilityDocument.size / 1024).toFixed(1)} KB
+                    {viewingUser.disabilityDocument && viewingUser.disabilityDocument.data && (
+                      <div className="file-preview-item">
+                        <div className="file-preview-header">
+                          <div className="file-icon">📄</div>
+                          <div className="file-details">
+                            <div className="file-name">{viewingUser.disabilityDocument.filename}</div>
+                            <div className="file-meta">
+                              {viewingUser.disabilityDocument.mimetype} • {(viewingUser.disabilityDocument.size / 1024).toFixed(1)} KB
+                            </div>
                           </div>
+                        </div>
+                        <div className="file-preview-content">
+                          {viewingUser.disabilityDocument.mimetype === 'application/pdf' ? (
+                            <iframe
+                              src={getDataUrl(viewingUser.disabilityDocument.data, viewingUser.disabilityDocument.mimetype)}
+                              className="file-preview-pdf"
+                              title="Disability Document"
+                            />
+                          ) : (
+                            <img 
+                              src={getDataUrl(viewingUser.disabilityDocument.data, viewingUser.disabilityDocument.mimetype)} 
+                              alt="Disability Document"
+                              className="file-preview-image"
+                            />
+                          )}
                         </div>
                       </div>
                     )}
@@ -200,14 +238,38 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
           )}
 
           {/* Driver-specific Information */}
-          {viewingUser.role === 'driver' && viewingUser.qrCode && (
+          {viewingUser.role === 'driver' && (
             <div className="details-section">
               <h4>Driver Information</h4>
               <div className="details-grid">
-                <div className="detail-item">
-                  <label>QR Code:</label>
-                  <span>{viewingUser.qrCode}</span>
-                </div>
+                {viewingUser.qrCode ? (
+                  <div className="detail-item qr-code-item">
+                    <label>QR Code:</label>
+                    <div className="qr-code-display">
+                      <img 
+                        src={viewingUser.qrCode} 
+                        alt="Driver QR Code" 
+                        className="qr-code-image-large"
+                        onClick={() => setShowQRModal(true)}
+                        style={{ cursor: 'pointer' }}
+                        title="Click to view/share"
+                      />
+                      <div className="qr-code-actions-inline">
+                        <button
+                          className="qr-view-share-btn"
+                          onClick={() => setShowQRModal(true)}
+                        >
+                          👁️ View / 🔗 Share
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="detail-item">
+                    <label>QR Code:</label>
+                    <span className="no-qr-code">No QR code generated yet</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -221,6 +283,17 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* QR Code Modal */}
+      {viewingUser.qrCode && (
+        <QRCodeModal
+          show={showQRModal}
+          qrCode={viewingUser.qrCode}
+          driverName={viewingUser.name}
+          driverEmail={viewingUser.email}
+          onClose={() => setShowQRModal(false)}
+        />
+      )}
     </div>
   );
 };

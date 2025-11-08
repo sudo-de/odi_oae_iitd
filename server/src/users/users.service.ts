@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../schemas/user.schema';
@@ -6,22 +6,88 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { readFileSync } from 'fs';
+import * as QRCode from 'qrcode';
+import { Observable } from 'rxjs';
+import { ChangeStreamDocument } from 'mongodb';
 
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    // Hash password only if provided
-    let hashedPassword = '';
-    if (createUserDto.password) {
-      hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+  watchUsers(): Observable<UserChangeEvent> {
+    return new Observable(observer => {
+      this.findAll()
+        .then(users => observer.next({ type: 'snapshot', payload: users }))
+        .catch(error => observer.error(error));
+
+      let changeStream: any;
+      try {
+        changeStream = this.userModel.watch([], { fullDocument: 'updateLookup' });
+      } catch (error) {
+        observer.error(error);
+        return;
+      }
+
+      changeStream.on('change', async (change: ChangeStreamDocument<UserDocument>) => {
+        try {
+          const event = await this.mapChangeToEvent(change);
+          if (event) {
+            observer.next(event);
+          }
+        } catch (err) {
+          observer.error(err);
+        }
+      });
+
+      changeStream.on('error', (err: any) => observer.error(err));
+
+      return () => {
+        if (changeStream) {
+          changeStream.close().catch(() => undefined);
+        }
+      };
+    });
+  }
+
+  // Helper method to transform user data: convert Buffer to base64 for file data
+  private transformUserForResponse(user: any): any {
+    const userObj = user.toObject ? user.toObject() : user;
+    
+    // Convert profilePhoto Buffer to base64
+    if (userObj.profilePhoto && userObj.profilePhoto.data) {
+      userObj.profilePhoto = {
+        ...userObj.profilePhoto,
+        data: userObj.profilePhoto.data.toString('base64')
+      };
     }
+    
+    // Convert disabilityDocument Buffer to base64
+    if (userObj.disabilityDocument && userObj.disabilityDocument.data) {
+      userObj.disabilityDocument = {
+        ...userObj.disabilityDocument,
+        data: userObj.disabilityDocument.data.toString('base64')
+      };
+    }
+    
+    return userObj;
+  }
+
+  // Helper method to transform array of users
+  private transformUsersForResponse(users: any[]): any[] {
+    return users.map(user => this.transformUserForResponse(user));
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    if (!createUserDto.password || !createUserDto.password.trim()) {
+      throw new BadRequestException('Password is required');
+    }
+
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     
     // Use MongoDB's insertOne operation
     const userData: any = {
       ...createUserDto,
-      password: hashedPassword || undefined,
+      password: hashedPassword,
     };
 
     // Convert string numbers to actual numbers
@@ -37,34 +103,43 @@ export class UsersService {
       userData.expiryDate = new Date(userData.expiryDate);
     }
     
-    const createdUser = new this.userModel(userData);
-    return createdUser.save();
+    const createdUser = await new this.userModel(userData).save();
+    return this.transformUserForResponse(createdUser);
   }
 
   async createWithFiles(createUserDto: CreateUserDto, files: Express.Multer.File[]): Promise<User> {
     try {
-      // Hash password only if provided (required for Admin/Staff, optional for Student/Driver)
-      let hashedPassword = '';
-      if (createUserDto.password) {
-        hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+      if (!createUserDto.password || !createUserDto.password.trim()) {
+        throw new BadRequestException('Password is required');
       }
+
+      const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
       
       // Process uploaded files and parse JSON fields
       const userData: any = {
         ...createUserDto,
-        password: hashedPassword || undefined,
+        password: hashedPassword,
       };
 
-      // Parse JSON fields if they are strings
+      // Parse JSON fields if they are strings (skip if already objects)
       try {
-        if (typeof userData.phone === 'string') {
-          userData.phone = JSON.parse(userData.phone);
+        if (userData.phone) {
+          if (typeof userData.phone === 'string' && userData.phone.trim().startsWith('{')) {
+            userData.phone = JSON.parse(userData.phone);
+          }
+          // If already an object, keep it as is
         }
-        if (typeof userData.hostel === 'string') {
-          userData.hostel = JSON.parse(userData.hostel);
+        if (userData.hostel) {
+          if (typeof userData.hostel === 'string' && userData.hostel.trim().startsWith('{')) {
+            userData.hostel = JSON.parse(userData.hostel);
+          }
+          // If already an object, keep it as is
         }
-        if (typeof userData.emergencyDetails === 'string') {
-          userData.emergencyDetails = JSON.parse(userData.emergencyDetails);
+        if (userData.emergencyDetails) {
+          if (typeof userData.emergencyDetails === 'string' && userData.emergencyDetails.trim().startsWith('{')) {
+            userData.emergencyDetails = JSON.parse(userData.emergencyDetails);
+          }
+          // If already an object, keep it as is
         }
         
         // Convert string numbers to actual numbers
@@ -103,8 +178,8 @@ export class UsersService {
       }
       
       console.log('Creating user with data:', JSON.stringify(userData, null, 2));
-      const createdUser = new this.userModel(userData);
-      return createdUser.save();
+      const createdUser = await new this.userModel(userData).save();
+      return this.transformUserForResponse(createdUser);
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
@@ -114,7 +189,8 @@ export class UsersService {
   async findAll(): Promise<User[]> {
     // First, update expiry status for all students
     await this.updateExpiryStatus();
-    return this.userModel.find().exec();
+    const users = await this.userModel.find().exec();
+    return this.transformUsersForResponse(users);
   }
 
   async updateExpiryStatus(): Promise<void> {
@@ -146,11 +222,13 @@ export class UsersService {
   }
 
   async findOne(id: string): Promise<User> {
-    return this.userModel.findById(id).exec();
+    const user = await this.userModel.findById(id).exec();
+    return user ? this.transformUserForResponse(user) : null;
   }
 
   async findByEmail(email: string): Promise<User> {
-    return this.userModel.findOne({ email }).exec();
+    const user = await this.userModel.findOne({ email }).exec();
+    return user ? this.transformUserForResponse(user) : null;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
@@ -160,32 +238,36 @@ export class UsersService {
     }
     
     // Use MongoDB's findOneAndUpdate operation
-    return this.userModel.findByIdAndUpdate(
+    const user = await this.userModel.findByIdAndUpdate(
       id, 
       { $set: updateUserDto }, 
       { new: true, runValidators: true }
     ).exec();
+    return user ? this.transformUserForResponse(user) : null;
   }
 
   async remove(id: string): Promise<User> {
-    return this.userModel.findByIdAndDelete(id).exec();
+    const user = await this.userModel.findByIdAndDelete(id).exec();
+    return user ? this.transformUserForResponse(user) : null;
   }
 
   // Additional MongoDB update operations
   async updateUserStatus(id: string, isActive: boolean): Promise<User> {
-    return this.userModel.findByIdAndUpdate(
+    const user = await this.userModel.findByIdAndUpdate(
       id,
       { $set: { isActive } },
       { new: true }
     ).exec();
+    return user ? this.transformUserForResponse(user) : null;
   }
 
   async updateUserRole(id: string, role: string): Promise<User> {
-    return this.userModel.findByIdAndUpdate(
+    const user = await this.userModel.findByIdAndUpdate(
       id,
       { $set: { role } },
       { new: true }
     ).exec();
+    return user ? this.transformUserForResponse(user) : null;
   }
 
   async bulkUpdateUsers(updates: Array<{ id: string; data: Partial<CreateUserDto> }>): Promise<any> {
@@ -212,4 +294,114 @@ export class UsersService {
       }
     ]).exec();
   }
+
+  // Generate QR code for a driver
+  async generateQRCodeForDriver(driverId: string): Promise<string> {
+    const driver = await this.userModel.findById(driverId).exec();
+    if (!driver || driver.role !== 'driver') {
+      throw new Error('Driver not found');
+    }
+
+    // Generate unique QR code data (using driver ID and email)
+    const qrData = JSON.stringify({
+      driverId: driver._id.toString(),
+      email: driver.email,
+      name: driver.name,
+      timestamp: new Date().toISOString()
+    });
+
+    // Generate QR code as base64 data URL
+    const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+
+    // Update driver with QR code (store the data URL)
+    await this.userModel.findByIdAndUpdate(
+      driverId,
+      { $set: { qrCode: qrCodeDataUrl } },
+      { new: true }
+    ).exec();
+
+    return qrCodeDataUrl;
+  }
+
+  // Generate QR codes for all drivers without QR codes
+  async generateQRCodesForAllDrivers(): Promise<{ success: number; failed: number }> {
+    const drivers = await this.userModel.find({ 
+      role: 'driver',
+      $or: [
+        { qrCode: { $exists: false } },
+        { qrCode: null },
+        { qrCode: '' }
+      ]
+    }).exec();
+
+    let success = 0;
+    let failed = 0;
+
+    for (const driver of drivers) {
+      try {
+        await this.generateQRCodeForDriver(driver._id.toString());
+        success++;
+      } catch (error) {
+        console.error(`Failed to generate QR code for driver ${driver._id}:`, error);
+        failed++;
+      }
+    }
+
+    return { success, failed };
+  }
+
+  private async mapChangeToEvent(change: ChangeStreamDocument<UserDocument>): Promise<UserChangeEvent | null> {
+    const documentKey = 'documentKey' in change ? (change as any).documentKey : undefined;
+    const rawId = documentKey?._id;
+    const idValue = rawId && typeof rawId.toString === 'function' ? rawId.toString() : rawId;
+
+    switch (change.operationType) {
+      case 'insert':
+      case 'replace':
+      case 'update': {
+        let document: any = null;
+        if (change.fullDocument) {
+          document = this.transformUserForResponse(change.fullDocument);
+        } else if (idValue) {
+          const fetched = await this.userModel.findById(idValue).exec();
+          if (fetched) {
+            document = this.transformUserForResponse(fetched);
+          }
+        }
+
+        if (!document) {
+          return null;
+        }
+
+        const eventType: UserChangeEvent['type'] = change.operationType === 'insert' ? 'created' : 'updated';
+
+        return {
+          type: eventType,
+          payload: document,
+        };
+      }
+      case 'delete':
+        if (!idValue) {
+          return null;
+        }
+        return {
+          type: 'deleted',
+          payload: { _id: idValue },
+        };
+      default:
+        return null;
+    }
+  }
+}
+
+export interface UserChangeEvent {
+  type: 'snapshot' | 'created' | 'updated' | 'deleted';
+  payload: any;
 }

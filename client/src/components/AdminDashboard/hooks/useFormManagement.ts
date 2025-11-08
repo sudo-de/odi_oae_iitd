@@ -118,11 +118,6 @@ export const useFormManagement = () => {
       qrCode: ''
     };
 
-    // Set password requirement based on role
-    if (role === 'admin' || role === 'staff') {
-      baseData.password = '';
-    }
-
     setCreateUserData(baseData);
     setSelectedFiles({
       profilePhoto: null,

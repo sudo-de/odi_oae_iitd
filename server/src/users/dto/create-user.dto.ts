@@ -1,7 +1,7 @@
 export class CreateUserDto {
   name: string;
   email: string;
-  password?: string; // Optional for Student and Driver
+  password: string;
   age?: number;
   isActive?: boolean;
   role?: string;

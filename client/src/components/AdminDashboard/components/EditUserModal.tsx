@@ -91,19 +91,17 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                 required
               />
             </div>
-            {(createUserData.role === 'admin' || createUserData.role === 'staff') && (
-              <div className="form-group">
-                <label htmlFor="edit-password">Password (leave blank to keep current):</label>
-                <input
-                  type="password"
-                  id="edit-password"
-                  name="password"
-                  value={createUserData.password}
-                  onChange={onInputChange}
-                  placeholder="Enter new password or leave blank"
-                />
-              </div>
-            )}
+            <div className="form-group">
+              <label htmlFor="edit-password">Password (leave blank to keep current):</label>
+              <input
+                type="password"
+                id="edit-password"
+                name="password"
+                value={createUserData.password}
+                onChange={onInputChange}
+                placeholder="Enter new password or leave blank"
+              />
+            </div>
             <div className="form-group checkbox-group">
               <label>
                 <input

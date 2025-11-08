@@ -4,11 +4,12 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Enable CORS for frontend communication
+  // Enable CORS for frontend communication (React + Flutter)
   app.enableCors({
-    origin: 'http://localhost:5173', // React dev server
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: true, // Allow all origins (for Flutter mobile apps) - restrict in production
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
   
   const port = process.env.PORT || 3000;

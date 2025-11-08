@@ -32,14 +32,12 @@ export class AuthService {
     }
 
     const payload = { email: user.email, sub: user._id, role: user.role };
+
+    const userDetails = await this.userModel.findById(user._id).exec();
+    const transformedUser = userDetails ? this.transformUser(userDetails) : user;
     return {
       access_token: this.jwtService.sign(payload),
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: transformedUser,
     };
   }
 
@@ -89,5 +87,25 @@ export class AuthService {
       password: hashedPassword,
     });
     return user.save();
+  }
+
+  private transformUser(user: UserDocument | any) {
+    const userObj = user.toObject ? user.toObject() : user;
+
+    if (userObj.profilePhoto && userObj.profilePhoto.data) {
+      userObj.profilePhoto = {
+        ...userObj.profilePhoto,
+        data: userObj.profilePhoto.data.toString('base64'),
+      };
+    }
+
+    if (userObj.disabilityDocument && userObj.disabilityDocument.data) {
+      userObj.disabilityDocument = {
+        ...userObj.disabilityDocument,
+        data: userObj.disabilityDocument.data.toString('base64'),
+      };
+    }
+
+    return userObj;
   }
 }

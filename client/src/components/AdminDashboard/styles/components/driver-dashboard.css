@@ -264,6 +264,59 @@
   font-weight: 500;
 }
 
+.qr-code-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qr-code-image-container {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.qr-code-image-container:hover {
+  transform: scale(1.05);
+}
+
+.qr-code-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  border: 2px solid #e1e5e9;
+  padding: 4px;
+  background: white;
+  transition: all 0.2s ease;
+  display: block;
+}
+
+.qr-code-image-container:hover .qr-code-image {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.qr-code-actions-small {
+  margin-top: 0.25rem;
+}
+
+.qr-view-btn {
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qr-view-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
 /* No Drivers State */
 .no-drivers {
   text-align: center;

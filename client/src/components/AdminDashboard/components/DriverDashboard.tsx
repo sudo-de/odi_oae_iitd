@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { User } from '../types';
 import { formatDate } from '../utils';
+import QRCodeModal from './QRCodeModal';
 
 interface DriverDashboardProps {
   users: User[];
 }
 
 const DriverDashboard: React.FC<DriverDashboardProps> = ({ users }) => {
+  const [selectedQRCode, setSelectedQRCode] = useState<{ qrCode: string; name: string; email: string } | null>(null);
+
   // Filter driver users
   const drivers = users.filter(user => user.role === 'driver');
   const activeDrivers = drivers.filter(driver => driver.isActive);
@@ -25,6 +28,7 @@ const DriverDashboard: React.FC<DriverDashboardProps> = ({ users }) => {
   const recentDrivers = drivers
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
+
 
   return (
     <div className="driver-dashboard">
@@ -138,7 +142,40 @@ const DriverDashboard: React.FC<DriverDashboardProps> = ({ users }) => {
                     {formatDate(driver.createdAt)}
                   </span>
                   {driver.qrCode && (
-                    <span className="qr-badge">QR Generated</span>
+                    <div className="qr-code-preview">
+                      <div 
+                        className="qr-code-image-container"
+                        onClick={() => setSelectedQRCode({ 
+                          qrCode: driver.qrCode!, 
+                          name: driver.name, 
+                          email: driver.email 
+                        })}
+                        title="Click to view/share QR code"
+                      >
+                        <img 
+                          src={driver.qrCode} 
+                          alt="QR Code" 
+                          className="qr-code-image"
+                        />
+                      </div>
+                      <div className="qr-code-actions-small">
+                        <button
+                          className="qr-view-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedQRCode({ 
+                              qrCode: driver.qrCode!, 
+                              name: driver.name, 
+                              email: driver.email 
+                            });
+                          }}
+                          title="View/Share QR Code"
+                        >
+                          👁️ View
+                        </button>
+                      </div>
+                      <span className="qr-badge">QR Generated</span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -152,28 +189,16 @@ const DriverDashboard: React.FC<DriverDashboardProps> = ({ users }) => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="driver-actions">
-        <h3>Quick Actions</h3>
-        <div className="actions-grid">
-          <button className="action-btn primary">
-            <span className="btn-icon">➕</span>
-            <span className="btn-text">Add New Driver</span>
-          </button>
-          <button className="action-btn secondary">
-            <span className="btn-icon">📱</span>
-            <span className="btn-text">Generate QR Codes</span>
-          </button>
-          <button className="action-btn secondary">
-            <span className="btn-icon">📊</span>
-            <span className="btn-text">Export Driver Report</span>
-          </button>
-          <button className="action-btn secondary">
-            <span className="btn-icon">🔄</span>
-            <span className="btn-text">Refresh Data</span>
-          </button>
-        </div>
-      </div>
+      {/* QR Code Modal */}
+      {selectedQRCode && (
+        <QRCodeModal
+          show={!!selectedQRCode}
+          qrCode={selectedQRCode.qrCode}
+          driverName={selectedQRCode.name}
+          driverEmail={selectedQRCode.email}
+          onClose={() => setSelectedQRCode(null)}
+        />
+      )}
     </div>
   );
 };
