@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { formatDate } from '../utils';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-// Extend jsPDF type to include autoTable
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
@@ -14,9 +13,9 @@ declare module 'jspdf' {
 export interface RideBill {
   id: string;
   studentName: string;
-  studentEntryNumber?: string; // Entry number for students
+  studentEntryNumber?: string;
   driverName: string;
-  location: string; // e.g., "IIT Main Gate → IIT Hospital"
+  location: string;
   fare: number;
   date: string;
   time: string;
@@ -26,9 +25,58 @@ export interface RideBill {
 interface RideBillsProps {
   rides: RideBill[];
   loading?: boolean;
+  onToggleSidebar?: () => void;
 }
 
-const RideBills: React.FC<RideBillsProps> = ({ rides, loading = false }) => {
+// Stat Card Component
+const StatCard = memo(({ icon, label, value, subtitle, variant }: {
+  icon: string;
+  label: string;
+  value: string | number;
+  subtitle?: string;
+  variant?: string;
+}) => (
+  <div className={`rb-stat-card ${variant || ''}`}>
+    <div className="stat-icon-wrapper">
+      <span className="stat-icon">{icon}</span>
+    </div>
+    <div className="stat-info">
+      <span className="stat-label">{label}</span>
+      <span className="stat-value">{value}</span>
+      {subtitle && <span className="stat-subtitle">{subtitle}</span>}
+    </div>
+  </div>
+));
+
+// Table Row Component
+const RideRow = memo(({ ride }: { ride: RideBill }) => (
+  <tr>
+    <td className="ride-id">
+      <span className="id-badge">#{ride.id}</span>
+    </td>
+    <td className="student-cell">
+      <div className="student-info">
+        <span className="student-name">{ride.studentName}</span>
+        {ride.studentEntryNumber && (
+          <span className="entry-number">{ride.studentEntryNumber}</span>
+        )}
+      </div>
+    </td>
+    <td className="driver-cell">
+      <span className="driver-badge">🚗 {ride.driverName}</span>
+    </td>
+    <td className="location-cell">
+      <span className="location-text" title={ride.location}>{ride.location}</span>
+    </td>
+    <td className="fare-cell">
+      <span className="fare-badge">₹{ride.fare.toFixed(2)}</span>
+    </td>
+    <td className="date-cell">{formatDate(ride.date)}</td>
+    <td className="time-cell">{ride.time}</td>
+  </tr>
+));
+
+const RideBills: React.FC<RideBillsProps> = ({ rides, loading = false, onToggleSidebar }) => {
   const [sortBy, setSortBy] = useState<'all' | 'today' | 'yesterday' | 'week' | 'month' | 'year' | 'custom'>('all');
   const [filterType, setFilterType] = useState<'all' | 'driver' | 'student'>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
@@ -38,12 +86,14 @@ const RideBills: React.FC<RideBillsProps> = ({ rides, loading = false }) => {
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const itemsPerPage = 10;
 
-  // Get unique drivers and students for filters
-  const uniqueDrivers = Array.from(new Set(rides.map(ride => ride.driverName)));
-  const uniqueStudents = Array.from(new Set(rides.map(ride => ride.studentEntryNumber || ride.studentName)));
+  // Unique values for filters
+  const { uniqueDrivers, uniqueStudents } = useMemo(() => ({
+    uniqueDrivers: Array.from(new Set(rides.map(ride => ride.driverName))),
+    uniqueStudents: Array.from(new Set(rides.map(ride => ride.studentEntryNumber || ride.studentName)))
+  }), [rides]);
 
-  // Get date range based on sortBy
-  const getDateRange = () => {
+  // Date range calculation
+  const getDateRange = useCallback(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
@@ -51,19 +101,14 @@ const RideBills: React.FC<RideBillsProps> = ({ rides, loading = false }) => {
       case 'today':
         return { start: today, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
       case 'yesterday':
-        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-        return { start: yesterday, end: today };
+        return { start: new Date(today.getTime() - 24 * 60 * 60 * 1000), end: today };
       case 'week':
-        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return { start: weekAgo, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
+        return { start: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000), end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
       case 'month':
-        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-        return { start: monthAgo, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
+        return { start: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000), end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
       case 'year':
-        const yearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
-        return { start: yearAgo, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
+        return { start: new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000), end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
       case 'custom':
-        // For custom, use the selected date range
         if (customStartDate && customEndDate) {
           const start = new Date(customStartDate);
           start.setHours(0, 0, 0, 0);
@@ -71,15 +116,17 @@ const RideBills: React.FC<RideBillsProps> = ({ rides, loading = false }) => {
           end.setHours(23, 59, 59, 999);
           return { start, end };
         }
-        return null; // If no dates selected, show all
+        return null;
       default:
-        return null; // 'all' - no date filter
+        return null;
     }
-  };
+  }, [sortBy, customStartDate, customEndDate]);
 
-  // Filter and sort rides
+  // Filter rides
+  const filteredRides = useMemo(() => {
   const dateRange = getDateRange();
-  const filteredRides = rides
+    
+    return rides
     .filter(ride => {
       let matchesFilter = true;
       if (filterType === 'driver') {
@@ -110,43 +157,49 @@ const RideBills: React.FC<RideBillsProps> = ({ rides, loading = false }) => {
       
       return matchesFilter && matchesSearch && matchesDate;
     })
-    .sort((a, b) => {
-      // Always sort by date descending (newest first)
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    });
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [rides, filterType, filterValue, searchTerm, getDateRange]);
+
+  // Stats
+  const stats = useMemo(() => {
+    const total = filteredRides.length;
+    const fares = filteredRides.map(r => r.fare);
+    const totalFare = fares.reduce((sum, f) => sum + f, 0);
+    const avgFare = total > 0 ? totalFare / total : 0;
+    const minFare = total > 0 ? Math.min(...fares) : 0;
+    const maxFare = total > 0 ? Math.max(...fares) : 0;
+    return { total, totalFare, avgFare, minFare, maxFare };
+  }, [filteredRides]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredRides.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedRides = filteredRides.slice(startIndex, startIndex + itemsPerPage);
+  const { totalPages, paginatedRides } = useMemo(() => {
+    const total = Math.ceil(filteredRides.length / itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    return {
+      totalPages: total,
+      paginatedRides: filteredRides.slice(start, start + itemsPerPage)
+    };
+  }, [filteredRides, currentPage]);
 
-  // Reset to page 1 when filters change
+  // Reset page on filter change
   React.useEffect(() => {
     setCurrentPage(1);
   }, [filterType, filterValue, searchTerm, sortBy, customStartDate, customEndDate]);
 
-  // Reset filter value when filter type changes
   React.useEffect(() => {
     setFilterValue('all');
   }, [filterType]);
 
-  // Calculate statistics (based on filtered results)
-  const totalFare = filteredRides.reduce((sum, ride) => sum + ride.fare, 0);
-  const averageFare = filteredRides.length > 0 ? totalFare / filteredRides.length : 0;
-  const totalRides = filteredRides.length;
-  const minFare = filteredRides.length > 0 ? Math.min(...filteredRides.map(r => r.fare)) : 0;
-  const maxFare = filteredRides.length > 0 ? Math.max(...filteredRides.map(r => r.fare)) : 0;
+  const handleClearFilters = useCallback(() => {
+    setSearchTerm('');
+    setFilterType('all');
+    setFilterValue('all');
+    setSortBy('all');
+    setCustomStartDate('');
+    setCustomEndDate('');
+  }, []);
 
-  // View single ride on map
-  const handleViewMap = (ride: RideBill) => {
-    const parsed = ride.location.split('→');
-    if (parsed.length === 2) {
-      alert(`Map View for Ride #${ride.id}\n\nFrom: ${parsed[0].trim()}\nTo: ${parsed[1].trim()}\n\nThis will open a map showing the route.`);
-    }
-  };
-
-  // Get filter labels for filename
-  const getFilterLabel = () => {
+  const getFilterLabel = useCallback(() => {
     const parts: string[] = [];
     if (filterType === 'driver' && filterValue !== 'all') {
       parts.push(`Driver-${filterValue.replace(/\s+/g, '_')}`);
@@ -154,27 +207,19 @@ const RideBills: React.FC<RideBillsProps> = ({ rides, loading = false }) => {
       parts.push(`Student-${filterValue.replace(/\s+/g, '_')}`);
     }
     const timeLabels: Record<string, string> = {
-      'all': 'All_Time',
-      'today': 'Today',
-      'yesterday': 'Yesterday',
-      'week': 'Last_Week',
-      'month': 'Last_Month',
-      'year': 'Last_Year',
-      'custom': 'Custom_Range'
+      'all': 'All_Time', 'today': 'Today', 'yesterday': 'Yesterday',
+      'week': 'Last_Week', 'month': 'Last_Month', 'year': 'Last_Year', 'custom': 'Custom_Range'
     };
     parts.push(timeLabels[sortBy] || 'All_Time');
     return parts.length > 0 ? `_${parts.join('_')}` : '';
-  };
+  }, [filterType, filterValue, sortBy]);
 
-  // Export to Excel
-  const exportToExcel = () => {
+  const exportToExcel = useCallback(() => {
     try {
-      // Prepare data for Excel
       const excelData = filteredRides.map(ride => ({
         'Ride ID': ride.id,
         'Student Name (Entry No.)': ride.studentEntryNumber 
-          ? `${ride.studentName} (${ride.studentEntryNumber})`
-          : ride.studentName,
+          ? `${ride.studentName} (${ride.studentEntryNumber})` : ride.studentName,
         'Driver Name': ride.driverName,
         'Location': ride.location,
         'Fare (₹)': ride.fare,
@@ -182,269 +227,175 @@ const RideBills: React.FC<RideBillsProps> = ({ rides, loading = false }) => {
         'Time': ride.time
       }));
 
-      // Create workbook and worksheet
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(excelData);
-
-      // Set column widths
-      const colWidths = [
-        { wch: 15 }, // Ride ID
-        { wch: 20 }, // Student Name
-        { wch: 20 }, // Driver Name
-        { wch: 30 }, // Location
-        { wch: 12 }, // Fare
-        { wch: 12 }, // Date
-        { wch: 10 }  // Time
-      ];
-      ws['!cols'] = colWidths;
-
-      // Add worksheet to workbook
+      ws['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 10 }];
       XLSX.utils.book_append_sheet(wb, ws, 'Ride Bills');
 
-      // Generate filename
       const timestamp = new Date().toISOString().split('T')[0];
-      const filterLabel = getFilterLabel();
-      const filename = `Ride_Bills_${timestamp}${filterLabel}.xlsx`;
-
-      // Save file
-      XLSX.writeFile(wb, filename);
+      XLSX.writeFile(wb, `Ride_Bills_${timestamp}${getFilterLabel()}.xlsx`);
     } catch (error) {
       console.error('Error exporting to Excel:', error);
       alert('Failed to export to Excel. Please try again.');
     }
-  };
+  }, [filteredRides, getFilterLabel]);
 
-  // Export to PDF
-  const exportToPDF = () => {
+  const exportToPDF = useCallback(() => {
     try {
       if (filteredRides.length === 0) {
-        alert('No rides to export. Please adjust your filters.');
+        alert('No rides to export.');
         return;
       }
 
-      // Use landscape orientation for better A4 formatting
       const doc = new jsPDF('landscape', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 15;
       
-      // Add header with logo/icon area
       doc.setFillColor(102, 126, 234);
       doc.rect(0, 0, pageWidth, 25, 'F');
-      
-      // Title
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
       doc.text('Ride Bills Report', pageWidth / 2, 15, { align: 'center' });
-      
-      // Subtitle
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.text('IIT Delhi Campus Ride Service', pageWidth / 2, 22, { align: 'center' });
-      
-      // Reset text color
       doc.setTextColor(0, 0, 0);
       
-      // Start table right after header
-      let yPos = 35;
-
-      // Prepare table data with better formatting
       const tableData = filteredRides.map(ride => {
-        // Clean and truncate text to avoid encoding issues
-        const cleanText = (text: string, maxLength: number) => {
-          // Replace problematic characters that don't render well in PDF
-          let cleaned = text
-            .replace(/→/g, '->')  // Replace arrow with simple arrow for better PDF compatibility
-            .replace(/['"`]/g, "'")  // Normalize quotes
-            .trim();
-          if (cleaned.length > maxLength) {
-            cleaned = cleaned.substring(0, maxLength - 3) + '...';
-          }
-          return cleaned;
+        const cleanText = (text: string, max: number) => {
+          let c = text.replace(/→/g, '->').replace(/['"`]/g, "'").trim();
+          return c.length > max ? c.substring(0, max - 3) + '...' : c;
         };
-        
-        // Format: Name (Entry Number) or just Name
         const studentDisplay = ride.studentEntryNumber 
-          ? `${ride.studentName} (${ride.studentEntryNumber})`
-          : ride.studentName;
-        
+          ? `${ride.studentName} (${ride.studentEntryNumber})` : ride.studentName;
         return [
-          ride.id,
-          cleanText(studentDisplay, 40),
-          cleanText(ride.driverName, 35),
-          cleanText(ride.location, 50),
-          `₹${ride.fare.toFixed(2)}`,
-          formatDate(ride.date),
-          ride.time
+          ride.id, cleanText(studentDisplay, 40), cleanText(ride.driverName, 35),
+          cleanText(ride.location, 50), `Rs.${ride.fare.toFixed(2)}`, formatDate(ride.date), ride.time
         ];
       });
 
-      // Add table with better A4 formatting
       autoTable(doc, {
         head: [['Ride ID', 'Student Name (Entry No.)', 'Driver Name', 'Location', 'Fare', 'Date', 'Time']],
         body: tableData,
-        startY: yPos,
-        styles: { 
-          fontSize: 6,
-          cellPadding: 2,
-          overflow: 'linebreak',
-          cellWidth: 'wrap'
-        },
-        headStyles: { 
-          fillColor: [66, 139, 202], 
-          textColor: 255, 
-          fontStyle: 'bold',
-          fontSize: 9
-        },
+        startY: 35,
+        styles: { fontSize: 6, cellPadding: 2, overflow: 'linebreak' },
+        headStyles: { fillColor: [66, 139, 202], textColor: 255, fontStyle: 'bold', fontSize: 9 },
         alternateRowStyles: { fillColor: [250, 250, 250] },
-        margin: { left: margin, right: margin, top: yPos },
+        margin: { left: 15, right: 15 },
         columnStyles: {
-          0: { cellWidth: 25, halign: 'left' },
-          1: { cellWidth: 45, halign: 'left' },
-          2: { cellWidth: 40, halign: 'left' },
-          3: { cellWidth: 70, halign: 'left' },
-          4: { cellWidth: 25, halign: 'right' },
-          5: { cellWidth: 30, halign: 'center' },
-          6: { cellWidth: 25, halign: 'center' }
+          0: { cellWidth: 25 }, 1: { cellWidth: 45 }, 2: { cellWidth: 40 },
+          3: { cellWidth: 70 }, 4: { cellWidth: 25, halign: 'right' },
+          5: { cellWidth: 30, halign: 'center' }, 6: { cellWidth: 25, halign: 'center' }
         },
-        tableWidth: 'wrap',
-        showHead: 'everyPage',
-        showFoot: 'never',
-        pageBreak: 'auto',
-        rowPageBreak: 'avoid'
+        showHead: 'everyPage', pageBreak: 'auto', rowPageBreak: 'avoid'
       });
 
-      // Add footer on all pages
       const pageCount = (doc as any).internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setTextColor(128, 128, 128);
-        doc.setFont('helvetica', 'normal');
-        doc.text(
-          `Page ${i} of ${pageCount}`,
-          pageWidth / 2,
-          pageHeight - 10,
-          { align: 'center' }
-        );
-        doc.setTextColor(0, 0, 0);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
       }
 
-      // Generate filename
       const timestamp = new Date().toISOString().split('T')[0];
-      const filterLabel = getFilterLabel();
-      const filename = `Ride_Bills_${timestamp}${filterLabel}.pdf`;
-
-      // Save file
-      doc.save(filename);
+      doc.save(`Ride_Bills_${timestamp}${getFilterLabel()}.pdf`);
     } catch (error: any) {
       console.error('Error exporting to PDF:', error);
-      const errorMessage = error?.message || 'Unknown error occurred';
-      console.error('Full error details:', {
-        message: errorMessage,
-        stack: error?.stack,
-        name: error?.name
-      });
-      alert(`Failed to export to PDF: ${errorMessage}\n\nPlease check the browser console for more details.`);
+      alert(`Failed to export to PDF: ${error?.message || 'Unknown error'}`);
     }
-  };
+  }, [filteredRides, getFilterLabel]);
+
+  const hasActiveFilters = searchTerm || filterType !== 'all' || filterValue !== 'all' || sortBy !== 'all' || customStartDate || customEndDate;
 
   if (loading) {
     return (
       <div className="ride-bills">
-        <div className="loading-state">Loading ride bills...</div>
+        <div className="rb-loading">
+          <div className="loading-spinner"></div>
+          <span>Loading ride bills...</span>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="ride-bills">
-      {/* Statistics */}
-      <div className="ride-bills-stats">
-        <div className="stat-card">
-          <div className="stat-icon">📊</div>
-          <div className="stat-content">
-            <h3>Total Rides</h3>
-            <div className="stat-number">{totalRides}</div>
+      {/* Banner */}
+      <div className="rb-banner">
+        <div className="banner-header">
+          {onToggleSidebar && (
+            <button className="mobile-menu-btn" onClick={onToggleSidebar} aria-label="Toggle sidebar">
+              ☰
+            </button>
+          )}
+          <div className="header-icon">🧾</div>
+          <div className="header-text">
+            <h2>Ride Bills</h2>
+            <p>View and export ride transaction records</p>
+          </div>
+          <div className="export-buttons">
+            <button className="export-btn excel" onClick={exportToExcel} disabled={filteredRides.length === 0}>
+              📊 Excel
+            </button>
+            <button className="export-btn pdf" onClick={exportToPDF} disabled={filteredRides.length === 0}>
+              📄 PDF
+            </button>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon">💰</div>
-          <div className="stat-content">
-            <h3>Total Revenue</h3>
-            <div className="stat-number">₹{totalFare.toFixed(2)}</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">📈</div>
-          <div className="stat-content">
-            <h3>Average Fare</h3>
-            <div className="stat-number">₹{averageFare.toFixed(2)}</div>
-            {filteredRides.length > 0 && (
-              <div className="stat-subtitle">Range: ₹{minFare.toFixed(2)} - ₹{maxFare.toFixed(2)}</div>
-            )}
-          </div>
+        <div className="banner-stats">
+          <StatCard icon="🚕" label="Total Rides" value={stats.total} />
+          <StatCard icon="💰" label="Total Revenue" value={`₹${stats.totalFare.toFixed(0)}`} />
+          <StatCard icon="📈" label="Avg Fare" value={`₹${stats.avgFare.toFixed(0)}`} />
+          <StatCard icon="📊" label="Range" value={`₹${stats.minFare} - ₹${stats.maxFare}`} />
         </div>
       </div>
 
-      {/* Search and Filters */}
-      <div className="ride-bills-controls">
-        <div className="search-group">
-          <label htmlFor="ride-search">Search:</label>
+      {/* Filters */}
+      <div className="rb-filters">
+        <div className="filter-row">
+          <div className="search-wrapper">
+            <span className="search-icon">🔍</span>
           <input
-            id="ride-search"
             type="text"
-            placeholder="Search by ID, student, driver, or location..."
+              placeholder="Search by ID, student, driver, location..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
           />
+            {searchTerm && (
+              <button className="clear-input" onClick={() => setSearchTerm('')}>×</button>
+            )}
         </div>
-        <div className="filter-group">
-          <label htmlFor="filter-type">Filter by:</label>
-          <select
-            id="filter-type"
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value as 'all' | 'driver' | 'student')}
-          >
+
+          <div className="filter-select">
+            <select value={filterType} onChange={(e) => setFilterType(e.target.value as any)}>
             <option value="all">All</option>
-            <option value="driver">Driver</option>
-            <option value="student">Student</option>
+              <option value="driver">By Driver</option>
+              <option value="student">By Student</option>
           </select>
         </div>
+
         {filterType !== 'all' && (
-          <div className="filter-group">
-            <label htmlFor="filter-value">Select {filterType === 'driver' ? 'Driver' : 'Student'}:</label>
-            <select
-              id="filter-value"
-              value={filterValue}
-              onChange={(e) => setFilterValue(e.target.value)}
-            >
+            <div className="filter-select">
+              <select value={filterValue} onChange={(e) => setFilterValue(e.target.value)}>
               <option value="all">All {filterType === 'driver' ? 'Drivers' : 'Students'}</option>
-              {(filterType === 'driver' ? uniqueDrivers : uniqueStudents).map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
+                {(filterType === 'driver' ? uniqueDrivers : uniqueStudents).map(item => (
+                  <option key={item} value={item}>{item}</option>
               ))}
             </select>
           </div>
         )}
-        <div className="sort-group">
-          <label htmlFor="sort-by">Time Period:</label>
-          <select
-            id="sort-by"
-            value={sortBy}
-            onChange={(e) => {
-              setSortBy(e.target.value as 'all' | 'today' | 'yesterday' | 'week' | 'month' | 'year' | 'custom');
-              // Reset custom dates when switching away from custom
+
+          <div className="filter-select time-filter">
+            <select value={sortBy} onChange={(e) => {
+              setSortBy(e.target.value as any);
               if (e.target.value !== 'custom') {
                 setCustomStartDate('');
                 setCustomEndDate('');
               }
-            }}
-          >
-            <option value="all">All</option>
+            }}>
+              <option value="all">All Time</option>
             <option value="today">Today</option>
             <option value="yesterday">Yesterday</option>
             <option value="week">Last Week</option>
@@ -453,141 +404,83 @@ const RideBills: React.FC<RideBillsProps> = ({ rides, loading = false }) => {
             <option value="custom">Custom Range</option>
           </select>
         </div>
+
+          {hasActiveFilters && (
+            <button className="clear-filters-btn" onClick={handleClearFilters}>
+              ✕ Clear
+            </button>
+          )}
+        </div>
+
         {sortBy === 'custom' && (
-          <div className="custom-date-range">
-            <div className="date-input-group">
-              <label htmlFor="start-date">From:</label>
+          <div className="custom-date-row">
+            <div className="date-input-wrapper">
+              <label>From</label>
               <input
-                id="start-date"
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
                 max={customEndDate || new Date().toISOString().split('T')[0]}
-                className="date-input"
               />
             </div>
-            <div className="date-input-group">
-              <label htmlFor="end-date">To:</label>
+            <span className="date-separator">→</span>
+            <div className="date-input-wrapper">
+              <label>To</label>
               <input
-                id="end-date"
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
                 min={customStartDate}
                 max={new Date().toISOString().split('T')[0]}
-                className="date-input"
               />
             </div>
           </div>
         )}
-        {(searchTerm || filterType !== 'all' || filterValue !== 'all' || sortBy !== 'all' || customStartDate || customEndDate) && (
-          <button
-            className="clear-filters-btn"
-            onClick={() => {
-              setSearchTerm('');
-              setFilterType('all');
-              setFilterValue('all');
-              setSortBy('all');
-              setCustomStartDate('');
-              setCustomEndDate('');
-            }}
-            title="Clear all filters"
-          >
-            Clear Filters
-          </button>
-        )}
-        <div className="export-group">
-          <button
-            className="export-btn excel"
-            onClick={exportToExcel}
-            disabled={filteredRides.length === 0}
-            title="Export to Excel"
-          >
-            📊 Export Excel
-          </button>
-          <button
-            className="export-btn pdf"
-            onClick={exportToPDF}
-            disabled={filteredRides.length === 0}
-            title="Export to PDF"
-          >
-            📄 Export PDF
-          </button>
+
+        {filteredRides.length !== rides.length && (
+          <div className="results-info">
+            Showing {filteredRides.length} of {rides.length} rides
         </div>
+        )}
       </div>
 
-      {/* Results Count */}
-      {filteredRides.length !== rides.length && (
-        <div className="results-count">
-          Showing {filteredRides.length} of {rides.length} rides
-        </div>
-      )}
-
-      {/* Ride Bills Table */}
-      <div className="ride-bills-table-container">
+      {/* Table */}
+      <div className="rb-table-container">
         {filteredRides.length > 0 ? (
           <>
-            <table className="ride-bills-table">
+            <table className="rb-table">
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Student Name (Entry No.)</th>
-                  <th>Driver Name</th>
-                  <th>Location</th>
+                  <th>Student</th>
+                  <th>Driver</th>
+                  <th>Route</th>
                   <th>Fare</th>
                   <th>Date</th>
                   <th>Time</th>
-                  <th>View</th>
                 </tr>
               </thead>
               <tbody>
-                {paginatedRides.map((ride) => (
-                  <tr key={ride.id}>
-                    <td className="ride-id" title={ride.id}>#{ride.id}</td>
-                    <td className="student-name">
-                      {ride.studentName}
-                      {ride.studentEntryNumber && (
-                        <span className="student-name-subtitle"> ({ride.studentEntryNumber})</span>
-                      )}
-                    </td>
-                    <td className="driver-name">{ride.driverName}</td>
-                    <td className="location" title={ride.location}>{ride.location}</td>
-                    <td className="fare">₹{ride.fare.toFixed(2)}</td>
-                    <td className="date">{formatDate(ride.date)}</td>
-                    <td className="time">{ride.time}</td>
-                    <td className="view-actions">
-                      <button
-                        className="action-btn map-btn"
-                        onClick={() => handleViewMap(ride)}
-                        title="View on Map"
-                      >
-                        🗺️ Map
-                      </button>
-                    </td>
-                  </tr>
+                {paginatedRides.map(ride => (
+                  <RideRow key={ride.id} ride={ride} />
                 ))}
               </tbody>
             </table>
             
-            {/* Pagination */}
             {totalPages > 1 && (
-              <div className="pagination">
+              <div className="rb-pagination">
                 <button
-                  className="pagination-btn"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  aria-label="Previous page"
                 >
-                  ← Previous
+                  ← Prev
                 </button>
-                <span className="pagination-info">
+                <span className="page-info">
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
-                  className="pagination-btn"
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  aria-label="Next page"
                 >
                   Next →
                 </button>
@@ -595,24 +488,12 @@ const RideBills: React.FC<RideBillsProps> = ({ rides, loading = false }) => {
             )}
           </>
         ) : (
-          <div className="no-rides">
-            <div className="no-rides-icon">🚕</div>
-            <h4>No ride bills found</h4>
-            <p>
-              {searchTerm || filterType !== 'all' || filterValue !== 'all' || sortBy !== 'all'
-                ? 'Try adjusting your search or filter criteria'
-                : 'No rides have been recorded yet'}
-            </p>
-            {(searchTerm || filterType !== 'all' || filterValue !== 'all' || sortBy !== 'all') && (
-              <button
-                className="clear-filters-btn"
-                onClick={() => {
-                  setSearchTerm('');
-                  setFilterType('all');
-                  setFilterValue('all');
-                  setSortBy('all');
-                }}
-              >
+          <div className="rb-empty">
+            <div className="empty-icon">🚕</div>
+            <h3>No ride bills found</h3>
+            <p>{hasActiveFilters ? 'Try adjusting your filters' : 'No rides recorded yet'}</p>
+            {hasActiveFilters && (
+              <button className="btn-clear" onClick={handleClearFilters}>
                 Clear Filters
               </button>
             )}
@@ -623,5 +504,4 @@ const RideBills: React.FC<RideBillsProps> = ({ rides, loading = false }) => {
   );
 };
 
-export default RideBills;
-
+export default memo(RideBills);

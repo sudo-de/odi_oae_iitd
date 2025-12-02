@@ -1,662 +1,641 @@
 /* Ride Bills Styles */
 .ride-bills {
   width: 100%;
+  animation: rbFadeIn 0.4s ease;
 }
 
-/* Map Section */
-.ride-bills-map-section {
-  margin-bottom: 2rem;
-  background: white;
-  border-radius: 15px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+@keyframes rbFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.ride-bills-map-section h3 {
-  margin: 0 0 1rem 0;
-  color: #2c3e50;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.ride-map-container {
-  width: 100%;
-  height: 500px;
-  border-radius: 10px;
+/* Banner */
+.rb-banner {
+  background: rgba(20, 20, 25, 0.95);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 1.5rem;
   overflow: hidden;
-  border: 1px solid #e9ecef;
+}
+
+.rb-banner .banner-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(239, 68, 68, 0.12));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   position: relative;
 }
 
-.ride-map-container.empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f8f9fa;
+.rb-banner .banner-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.8), rgba(239, 68, 68, 0.8));
 }
 
-.map-placeholder {
-  text-align: center;
-  color: #6c757d;
+.rb-banner .header-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
-.map-placeholder-icon {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.5;
+.rb-banner .header-text {
+  flex: 1;
 }
 
-.map-placeholder p {
+.rb-banner .header-text h2 {
   margin: 0;
-  font-size: 1rem;
-}
-
-/* Leaflet Popup Styles */
-.leaflet-popup-content-wrapper {
-  border-radius: 8px;
-}
-
-.route-popup,
-.location-popup {
-  margin: 0;
-  min-width: 150px;
-}
-
-.route-popup strong,
-.location-popup strong {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #2c3e50;
-  font-size: 1rem;
-}
-
-.route-popup p,
-.location-popup p {
-  margin: 0.25rem 0;
-  font-size: 0.9rem;
-  color: #495057;
-}
-
-.ride-bills-section {
-  background: white;
-  border-radius: 15px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.ride-bills-section h3 {
-  margin: 0 0 1.5rem 0;
-  color: #2c3e50;
   font-size: 1.5rem;
   font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
 }
 
-/* Ride Bills Statistics */
-.ride-bills-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+.rb-banner .header-text p {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.ride-bills-stats .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 15px;
-  padding: 1.5rem;
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-  transition: all 0.3s ease;
+.rb-banner .export-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.rb-banner .export-btn {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.ride-bills-stats .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
-}
-
-.ride-bills-stats .stat-icon {
-  font-size: 2.5rem;
-  opacity: 0.9;
-}
-
-.ride-bills-stats .stat-content h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.9rem;
-  font-weight: 500;
-  opacity: 0.9;
-  color: white;
-}
-
-.ride-bills-stats .stat-number {
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0;
-  color: white;
-}
-
-.ride-bills-stats .stat-subtitle {
-  font-size: 0.75rem;
-  opacity: 0.8;
-  margin-top: 0.25rem;
-  color: white;
-}
-
-/* Controls */
-.ride-bills-controls {
-  display: flex;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #f8f9fa;
+  gap: 0.375rem;
+  padding: 0.625rem 1rem;
+  border: none;
   border-radius: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.search-group {
-  flex: 1;
-  min-width: 250px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.search-input {
-  padding: 0.75rem 1rem;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  background: white;
-  color: #495057;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  width: 100%;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.search-input::placeholder {
-  color: #adb5bd;
-}
-
-.clear-filters-btn {
-  padding: 0.5rem 1rem;
-  background: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.clear-filters-btn:hover {
-  background: #c82333;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
-}
-
-.export-group {
-  display: flex;
-  gap: 0.75rem;
-  margin-left: auto;
-}
-
-.export-btn {
-  padding: 0.75rem 1.25rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
   font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  white-space: nowrap;
 }
 
-.export-btn.excel {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
+.rb-banner .export-btn.excel {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #ffffff;
 }
 
-.export-btn.excel:hover:not(:disabled) {
+.rb-banner .export-btn.pdf {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+}
+
+.rb-banner .export-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
-.export-btn.pdf {
-  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-  color: white;
-}
-
-.export-btn.pdf:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-}
-
-.export-btn:disabled {
+.rb-banner .export-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
-/* Custom Date Range */
-.custom-date-range {
-  display: flex;
+.rb-banner .banner-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  align-items: flex-end;
-  padding: 0.75rem;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-  margin-top: 0.5rem;
+  padding: 1.25rem 2rem;
 }
 
-.date-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.date-input-group label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #495057;
-}
-
-.date-input {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  background: white;
-  color: #495057;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-}
-
-.date-input:hover {
-  border-color: #667eea;
-}
-
-.date-input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.date-input::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-}
-
-.date-input::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
-}
-
-.results-count {
-  padding: 0.75rem 1rem;
-  background: #e7f3ff;
-  border-left: 4px solid #667eea;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-  color: #495057;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.filter-group,
-.sort-group {
+/* Stat Card */
+.rb-stat-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.3s ease;
 }
 
-.filter-group label,
-.sort-group label {
-  font-weight: 500;
-  color: #495057;
-  font-size: 0.9rem;
+.rb-stat-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
-.filter-group select,
-.sort-group select {
-  padding: 0.5rem 1rem;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  background: white;
-  color: #495057;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.filter-group select:hover,
-.sort-group select:hover {
-  border-color: #667eea;
-}
-
-.filter-group select:focus,
-.sort-group select:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.sort-order-btn {
-  padding: 0.5rem 0.75rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.rb-stat-card .stat-icon-wrapper {
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  height: 38px;
-}
-
-.sort-order-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-/* Table Container */
-.ride-bills-table-container {
-  overflow-x: auto;
+  background: rgba(245, 158, 11, 0.15);
   border-radius: 10px;
-  border: 1px solid #e9ecef;
-  background: white;
+  flex-shrink: 0;
 }
 
-.ride-bills-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 800px;
+.rb-stat-card .stat-icon {
+  font-size: 1.25rem;
 }
 
-.ride-bills-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+.rb-stat-card .stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
-.ride-bills-table th {
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.9rem;
+.rb-stat-card .stat-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.ride-bills-table tbody tr {
-  border-bottom: 1px solid #e9ecef;
+.rb-stat-card .stat-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.rb-stat-card .stat-subtitle {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Filters */
+.rb-filters {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.rb-filters .filter-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.rb-filters .search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1;
+  min-width: 250px;
+  max-width: 400px;
+  padding: 0 1rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
   transition: all 0.2s ease;
-  cursor: default;
 }
 
-.ride-bills-table tbody tr:hover {
-  background: #f8f9fa;
-  transform: scale(1.01);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+.rb-filters .search-wrapper:focus-within {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
 }
 
-.ride-bills-table tbody tr:last-child {
-  border-bottom: none;
-}
-
-.ride-bills-table td {
-  padding: 1rem;
-  color: #495057;
-  font-size: 0.95rem;
-}
-
-.ride-bills-table .ride-id {
-  font-family: 'Courier New', monospace;
-  font-weight: 600;
-  color: #667eea;
-  cursor: help;
-}
-
-.ride-bills-table .student-name {
-  font-weight: 500;
-  color: #2c3e50;
-}
-
-.ride-bills-table .student-name-subtitle {
-  font-size: 0.85rem;
-  color: #6c757d;
-  font-weight: 400;
-  margin-left: 0.25rem;
-}
-
-.ride-bills-table .driver-name {
-  font-weight: 500;
-  color: #495057;
-}
-
-.ride-bills-table .location {
-  color: #6c757d;
-  max-width: 250px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: help;
-}
-
-.ride-bills-table .fare {
-  font-weight: 600;
-  color: #28a745;
+.rb-filters .search-icon {
   font-size: 1rem;
-}
-
-.ride-bills-table .date {
-  color: #6c757d;
-}
-
-.ride-bills-table .time {
-  font-family: 'Courier New', monospace;
-  color: #495057;
-  font-weight: 500;
-}
-
-.ride-bills-table .view-actions {
-  padding: 0.5rem;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  justify-content: center;
-}
-
-.action-btn {
-  padding: 0.4rem 0.8rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.action-btn.map-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.action-btn.map-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-}
-
-.action-btn.invoice-btn {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-}
-
-.action-btn.invoice-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
-}
-
-/* Loading State */
-.ride-bills .loading-state {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #6c757d;
-  font-size: 1.1rem;
-}
-
-/* No Rides State */
-.no-rides {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #6c757d;
-}
-
-.no-rides-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
   opacity: 0.5;
 }
 
-.no-rides h4 {
-  margin: 0 0 0.5rem 0;
-  color: #495057;
-  font-size: 1.2rem;
+.rb-filters .search-wrapper input {
+  flex: 1;
+  padding: 0.75rem 0;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  outline: none;
 }
 
-.no-rides p {
-  margin: 0;
+.rb-filters .search-wrapper input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.rb-filters .clear-input {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.rb-filters .clear-input:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.rb-filters .filter-select select {
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rb-filters .filter-select select:focus {
+  outline: none;
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.rb-filters .filter-select select option {
+  background: #1a1a1f;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.rb-filters .clear-filters-btn {
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  color: #f87171;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rb-filters .clear-filters-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.rb-filters .custom-date-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rb-filters .date-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.rb-filters .date-input-wrapper label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rb-filters .date-input-wrapper input {
+  padding: 0.625rem 1rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+}
+
+.rb-filters .date-input-wrapper input:focus {
+  outline: none;
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.rb-filters .date-separator {
+  color: rgba(255, 255, 255, 0.4);
   font-size: 1rem;
-  color: #6c757d;
+  margin-top: 1.25rem;
+}
+
+.rb-filters .results-info {
+  margin-top: 1rem;
+  padding: 0.625rem 1rem;
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 3px solid rgba(245, 158, 11, 0.6);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Table Container */
+.rb-table-container {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.rb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rb-table thead {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.rb-table th {
+  padding: 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rb-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.2s ease;
+}
+
+.rb-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rb-table td {
+  padding: 0.875rem 1rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Table Cell Styles */
+.rb-table .ride-id .id-badge {
+  font-family: 'SF Mono', monospace;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(120, 119, 198, 0.15);
+  border-radius: 6px;
+  color: rgba(167, 139, 250, 0.95);
+}
+
+.rb-table .student-cell .student-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.rb-table .student-cell .student-name {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.rb-table .student-cell .entry-number {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.rb-table .driver-cell .driver-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(34, 197, 94, 0.15);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: rgba(134, 239, 172, 0.95);
+}
+
+.rb-table .location-cell .location-text {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.rb-table .fare-cell .fare-badge {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #4ade80;
+}
+
+.rb-table .date-cell {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+}
+
+.rb-table .time-cell {
+  font-family: 'SF Mono', monospace;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
 }
 
 /* Pagination */
-.pagination {
+.rb-pagination {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 1rem;
-  padding: 1.5rem;
-  background: #f8f9fa;
-  border-top: 1px solid #e9ecef;
+  padding: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.2);
 }
 
-.pagination-btn {
-  padding: 0.5rem 1rem;
-  background: white;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  color: #495057;
-  font-size: 0.9rem;
-  font-weight: 500;
+.rb-pagination button {
+  padding: 0.625rem 1.25rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.pagination-btn:hover:not(:disabled) {
-  background: #667eea;
-  color: white;
-  border-color: #667eea;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+.rb-pagination button:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
 }
 
-.pagination-btn:disabled {
-  opacity: 0.5;
+.rb-pagination button:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-.pagination-info {
-  color: #6c757d;
-  font-size: 0.9rem;
-  font-weight: 500;
+.rb-pagination .page-info {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-/* Responsive Design */
+/* Loading */
+.rb-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.rb-loading .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: rgba(245, 158, 11, 0.8);
+  border-radius: 50%;
+  animation: rbSpin 0.8s linear infinite;
+}
+
+@keyframes rbSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty State */
+.rb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.rb-empty .empty-icon {
+  font-size: 3.5rem;
+  opacity: 0.3;
+}
+
+.rb-empty h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.rb-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.rb-empty .btn-clear {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 10px;
+  color: #fbbf24;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rb-empty .btn-clear:hover {
+  background: rgba(245, 158, 11, 0.25);
+}
+
+/* Mobile Menu Button */
+.rb-banner .mobile-menu-btn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rb-banner .mobile-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .rb-banner .banner-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
-  .ride-bills-stats {
-    grid-template-columns: 1fr;
+  .rb-banner .mobile-menu-btn {
+    display: flex;
   }
 
-  .ride-bills-controls {
-    flex-direction: column;
-    align-items: stretch;
+  .rb-banner .banner-header {
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
   }
 
-  .search-group {
-    min-width: 100%;
-  }
-
-  .filter-group,
-  .sort-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .export-group {
-    margin-left: 0;
+  .rb-banner .header-text {
+    order: 2;
     width: 100%;
-    justify-content: stretch;
   }
 
-  .export-btn {
+  .rb-banner .header-text h2 {
+    font-size: 1.25rem;
+  }
+
+  .rb-banner .export-buttons {
+    order: 3;
+    width: 100%;
+  }
+
+  .rb-banner .export-btn {
     flex: 1;
     justify-content: center;
   }
 
-  .custom-date-range {
+  .rb-banner .banner-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+  }
+  
+  .rb-stat-card {
+    padding: 0.875rem;
+  }
+  
+  .rb-stat-card .stat-value {
+    font-size: 1rem;
+  }
+  
+  .rb-filters .filter-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .ride-bills-map-section {
-    padding: 1rem;
+  .rb-filters .search-wrapper {
+    max-width: 100%;
   }
 
-  .ride-map-container {
-    height: 400px;
+  .rb-filters .filter-select {
+    width: 100%;
   }
 
-  .ride-bills-table-container {
-    overflow-x: scroll;
+  .rb-filters .filter-select select {
+    width: 100%;
   }
 
-  .ride-bills-table {
-    font-size: 0.85rem;
-  }
-
-  .ride-bills-table th,
-  .ride-bills-table td {
-    padding: 0.75rem 0.5rem;
-  }
-
-  .pagination {
+  .rb-filters .custom-date-row {
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
+  }
+
+  .rb-filters .date-separator {
+    display: none;
+  }
+
+  .rb-table-container {
+    overflow-x: auto;
+  }
+  
+  .rb-table {
+    min-width: 700px;
   }
 }
-

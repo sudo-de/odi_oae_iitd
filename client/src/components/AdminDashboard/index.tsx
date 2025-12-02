@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../Sidebar';
-import type { AdminDashboardProps, User } from './types';
+import type { AdminDashboardProps, User, CreateUserData, SelectedFiles } from './types';
 import { useUserManagement } from './hooks/useUserManagement';
 import { useFormManagement } from './hooks/useFormManagement';
 import { useModalManagement } from './hooks/useModalManagement';
@@ -9,7 +9,6 @@ import { calculateStats } from './utils';
 import DashboardOverview from './components/DashboardOverview';
 import UserManagement from './components/UserManagement';
 import DriverDashboard from './components/DriverDashboard';
-import RideLocationDashboard from './components/RideLocationDashboard';
 import RideBillsDashboard from './components/RideBillsDashboard';
 import Settings from './components/Settings';
 import CreateUserModal from './components/CreateUserModal';
@@ -21,6 +20,7 @@ import './styles/index.css';
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Custom hooks
   const {
@@ -32,7 +32,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
     createUser,
     updateUser,
     deleteUser,
-    toggleUserStatus
+    toggleUserStatus,
+    showNotification
   } = useUserManagement(token);
 
   const {
@@ -69,9 +70,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
   } = useMenuManagement();
 
   // Event handlers
-  const handleCreateUser = async (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent, data?: CreateUserData, files?: SelectedFiles) => {
     e.preventDefault();
-    const success = await createUser(createUserData, selectedFiles);
+    
+    // Use passed data if available (avoids stale closure), otherwise fall back to state
+    const userData = data || createUserData;
+    const userFiles = files || selectedFiles;
+    
+    // Debug: Log what we're about to send
+    console.log('handleCreateUser called with:', {
+      name: userData.name,
+      email: userData.email,
+      password: userData.password ? '***EXISTS***' : '***EMPTY***',
+      role: userData.role
+    });
+    
+    // Final safeguard: ensure password exists
+    if (!userData.password || !userData.password.trim()) {
+      console.error('Password is empty in handleCreateUser!');
+      setError('Password is required');
+      return;
+    }
+    
+    const success = await createUser(userData, userFiles);
     if (success) {
       resetForm();
       setShowCreateUser(false);
@@ -167,26 +188,62 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
 
   const stats = calculateStats(users);
 
+  const handleToggleSidebar = () => {
+    if (window.innerWidth <= 768) {
+      // On mobile, toggle overlay
+      setMobileSidebarOpen(!mobileSidebarOpen);
+    } else {
+      // On desktop, toggle collapse
+      setSidebarCollapsed(!sidebarCollapsed);
+    }
+  };
+
+  // Close mobile sidebar when clicking overlay
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (mobileSidebarOpen && window.innerWidth <= 768) {
+        const target = e.target as HTMLElement;
+        if (target.classList.contains('admin-dashboard') || target.closest('.main-content')) {
+          setMobileSidebarOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [mobileSidebarOpen]);
+
   if (loading) {
     return <div className="loading">Loading admin dashboard...</div>;
   }
 
   return (
-    <div className="admin-dashboard">
+    <div className={`admin-dashboard ${mobileSidebarOpen ? 'sidebar-open' : ''}`}>
       <Sidebar 
         user={user}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          if (window.innerWidth <= 768) {
+            setMobileSidebarOpen(false);
+          }
+        }}
         isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onToggleCollapse={handleToggleSidebar}
+        mobileOpen={mobileSidebarOpen}
       />
 
       <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}`}>
+        {activeTab !== 'overview' && activeTab !== 'users' && activeTab !== 'driver' && activeTab !== 'ride-bills' && activeTab !== 'settings' && (
         <div className="content-header">
-          <h1>{activeTab === 'overview' ? 'Dashboard Overview' : 
-                activeTab === 'users' ? 'User Management' : 
-                activeTab === 'driver' ? 'Driver Dashboard' : 
-                activeTab === 'driver-ride-location' ? 'Ride Location Management' :
+          <button 
+            className="mobile-menu-btn"
+            onClick={handleToggleSidebar}
+            aria-label="Toggle sidebar"
+          >
+            ☰
+          </button>
+            <h1>{activeTab === 'driver-ride-location' ? 'Ride Location Management' :
                 activeTab === 'ride-bills' ? 'Ride Bills' :
                 activeTab === 'settings' ? 'System Settings' :
                 'Dashboard'}</h1>
@@ -198,10 +255,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
             </div>
           </div>
         </div>
+        )}
 
         <div className="admin-content">
           {activeTab === 'overview' && (
-            <DashboardOverview users={users} />
+            <DashboardOverview users={users} onToggleSidebar={handleToggleSidebar} />
           )}
 
           {activeTab === 'users' && (
@@ -215,6 +273,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
               onToggleStatus={handleToggleStatusClick}
               onDeleteUser={handleDeleteUserClick}
               onShowCreateUser={() => setShowCreateUser(true)}
+              onToggleSidebar={handleToggleSidebar}
               activeMenuId={activeMenuId}
               menuPosition={menuPosition}
             />
@@ -223,19 +282,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, user }) => {
           {activeTab === 'driver' && (
             <DriverDashboard 
               users={users} 
+              token={token}
+              onToggleSidebar={handleToggleSidebar}
             />
           )}
 
-          {activeTab === 'driver-ride-location' && (
-            <RideLocationDashboard token={token} />
-          )}
-
           {activeTab === 'ride-bills' && (
-            <RideBillsDashboard users={users} />
+            <RideBillsDashboard token={token} onToggleSidebar={handleToggleSidebar} />
           )}
 
           {activeTab === 'settings' && (
-            <Settings users={users} />
+            <Settings users={users} onToggleSidebar={handleToggleSidebar} showNotification={showNotification} />
           )}
 
         </div>

@@ -406,7 +406,7 @@
 /* Data Actions */
 .st-card .data-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   padding: 1rem;
 }
@@ -447,6 +447,19 @@
 .st-card .data-btn .btn-desc {
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.5);
+}
+
+.st-card .data-btn.import {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: rgba(59, 130, 246, 0.9);
+  cursor: pointer;
+}
+
+.st-card .data-btn.import:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-2px);
 }
 
 .st-card .data-btn.backup {
@@ -593,6 +606,49 @@
   .st-card .data-actions {
     grid-template-columns: 1fr;
     gap: 0.75rem;
+  }
+
+  .import-progress,
+  .data-actions {
+    margin: 1rem 0;
+  }
+
+  .st-card .data-btn.import {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .st-card .data-btn.import:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+  }
+
+  .import-progress {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .progress-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: rgba(59, 130, 246, 0.9);
+  }
+
+  .progress-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  .progress-text {
+    font-size: 0.875rem;
+    font-weight: 500;
   }
   
   .st-card .api-value {
@@ -778,6 +834,51 @@
   font-weight: 500;
 }
 
+.backup-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.clear-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: rgba(239, 68, 68, 0.9);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clear-all-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: translateY(-1px);
+}
+
+.clear-all-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.clear-all-btn .btn-icon {
+  font-size: 0.875rem;
+}
+
+.clear-all-btn .btn-spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
 .backup-list {
   display: flex;
   flex-direction: column;
@@ -838,12 +939,59 @@
 
 .backup-details {
   padding-left: 2.375rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
 }
 
 .backup-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 0.5rem;
+  flex: 1;
+}
+
+.backup-actions {
+  margin-left: 1rem;
+}
+
+.delete-backup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: rgba(239, 68, 68, 0.8);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.delete-backup-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: scale(1.05);
+}
+
+.delete-backup-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.delete-backup-btn .btn-icon {
+  font-size: 0.875rem;
+}
+
+.delete-backup-btn .btn-spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 .stat-item {
@@ -861,10 +1009,11 @@
   font-weight: 500;
 }
 
-.stat-value {
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 600;
-}
+  .stat-value {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+  }
+
 
 /* No backups state */
 .no-backups {
@@ -921,6 +1070,17 @@
     gap: 0.5rem;
   }
 
+  .backup-header-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .clear-all-btn {
+    align-self: flex-end;
+  }
+
   .backup-item-main {
     gap: 0.75rem;
   }
@@ -933,6 +1093,13 @@
 
   .backup-details {
     padding-left: 0;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .backup-actions {
+    margin-left: 0;
+    align-self: flex-end;
   }
 
   .backup-stats {
@@ -944,3 +1111,4 @@
     justify-content: space-between;
   }
 }
+

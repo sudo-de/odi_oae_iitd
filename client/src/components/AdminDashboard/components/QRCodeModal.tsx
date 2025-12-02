@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 
 interface QRCodeModalProps {
   show: boolean;
@@ -16,132 +16,158 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
   onClose
 }) => {
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
-  if (!show || !qrCode) return null;
+  const handleOverlayClick = useCallback((e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) onClose();
+  }, [onClose]);
 
-  const downloadQRCode = () => {
+  const downloadQRCode = useCallback(async () => {
+    setDownloading(true);
+    try {
     const link = document.createElement('a');
     link.href = qrCode;
     link.download = `QRCode_${driverName.replace(/\s+/g, '_')}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+    } finally {
+      setTimeout(() => setDownloading(false), 500);
+    }
+  }, [qrCode, driverName]);
 
-  const copyQRCodeToClipboard = async () => {
+  const copyQRCodeToClipboard = useCallback(async () => {
     try {
-      // Convert data URL to blob
       const response = await fetch(qrCode);
       const blob = await response.blob();
-      
-      // Copy to clipboard
       await navigator.clipboard.write([
         new ClipboardItem({ [blob.type]: blob })
       ]);
-      
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy QR code:', err);
-      // Fallback: try to copy the data URL as text
+    } catch {
       try {
         await navigator.clipboard.writeText(qrCode);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-      } catch (err2) {
-        console.error('Failed to copy QR code URL:', err2);
+      } catch (err) {
+        console.error('Failed to copy:', err);
       }
     }
-  };
+  }, [qrCode]);
 
-  const shareQRCode = async () => {
+  const shareQRCode = useCallback(async () => {
+    setSharing(true);
     try {
-      // Convert data URL to blob
       const response = await fetch(qrCode);
       const blob = await response.blob();
       const file = new File([blob], `QRCode_${driverName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
 
       if (navigator.share && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          title: `QR Code for ${driverName}`,
-          text: `QR Code for driver: ${driverName} (${driverEmail})`,
+          title: `QR Code - ${driverName}`,
+          text: `Driver QR Code: ${driverName}`,
           files: [file]
         });
       } else {
-        // Fallback: download
         downloadQRCode();
       }
-    } catch (err) {
-      console.error('Failed to share QR code:', err);
-      // Fallback: download
+    } catch {
       downloadQRCode();
+    } finally {
+      setSharing(false);
     }
-  };
+  }, [qrCode, driverName, downloadQRCode]);
+
+  if (!show || !qrCode) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal qr-code-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>QR Code: {driverName}</h3>
-          <button 
-            className="modal-close"
-            onClick={onClose}
-          >
+    <div className="modal-overlay qr-modal-overlay" onClick={handleOverlayClick}>
+      <div className="modal qr-code-modal">
+        {/* Header */}
+        <div className="qr-modal-header">
+          <div className="qr-modal-title">
+            <span className="qr-title-icon">📱</span>
+            <div>
+              <h3>Driver QR Code</h3>
+              <p>{driverName}</p>
+            </div>
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </div>
-        <div className="qr-code-modal-content">
-          <div className="qr-code-display-large">
+
+        {/* Content */}
+        <div className="qr-modal-body">
+          {/* QR Code Display */}
+          <div className="qr-display-container">
+            <div className="qr-display-frame">
             <img 
               src={qrCode} 
               alt={`QR Code for ${driverName}`}
-              className="qr-code-image-modal"
-            />
+                className="qr-display-image"
+              />
+              <div className="qr-corner tl"></div>
+              <div className="qr-corner tr"></div>
+              <div className="qr-corner bl"></div>
+              <div className="qr-corner br"></div>
+            </div>
+            <p className="qr-scan-hint">Scan to verify driver identity</p>
           </div>
-          <div className="qr-code-info">
-            <p><strong>Driver:</strong> {driverName}</p>
-            <p><strong>Email:</strong> {driverEmail}</p>
+
+          {/* Driver Info */}
+          <div className="qr-driver-info">
+            <div className="driver-info-item">
+              <span className="info-icon">👤</span>
+              <div className="info-content">
+                <span className="info-label">Driver Name</span>
+                <span className="info-value">{driverName}</span>
+              </div>
+            </div>
+            <div className="driver-info-item">
+              <span className="info-icon">📧</span>
+              <div className="info-content">
+                <span className="info-label">Email</span>
+                <span className="info-value">{driverEmail}</span>
+              </div>
+            </div>
           </div>
-          <div className="qr-code-actions">
+
+          {/* Action Buttons */}
+          <div className="qr-actions-grid">
             <button 
-              className="qr-action-btn view"
-              onClick={() => window.open(qrCode, '_blank')}
-              title="View full size"
-            >
-              <span className="btn-icon">👁️</span>
-              <span className="btn-text">View</span>
-            </button>
-            <button 
-              className="qr-action-btn download"
+              className={`qr-action-card download ${downloading ? 'active' : ''}`}
               onClick={downloadQRCode}
-              title="Download QR code"
+              disabled={downloading}
             >
-              <span className="btn-icon">⬇️</span>
-              <span className="btn-text">Download</span>
+              <span className="action-icon">{downloading ? '✓' : '⬇️'}</span>
+              <span className="action-text">{downloading ? 'Saved!' : 'Download'}</span>
             </button>
+            
             <button 
-              className="qr-action-btn copy"
+              className={`qr-action-card copy ${copied ? 'active' : ''}`}
               onClick={copyQRCodeToClipboard}
-              title="Copy to clipboard"
             >
-              <span className="btn-icon">{copied ? '✓' : '📋'}</span>
-              <span className="btn-text">{copied ? 'Copied!' : 'Copy'}</span>
+              <span className="action-icon">{copied ? '✓' : '📋'}</span>
+              <span className="action-text">{copied ? 'Copied!' : 'Copy'}</span>
             </button>
+            
             <button 
-              className="qr-action-btn share"
+              className={`qr-action-card share ${sharing ? 'active' : ''}`}
               onClick={shareQRCode}
-              title="Share QR code"
+              disabled={sharing}
             >
-              <span className="btn-icon">🔗</span>
-              <span className="btn-text">Share</span>
+              <span className="action-icon">{sharing ? '...' : '🔗'}</span>
+              <span className="action-text">{sharing ? 'Sharing...' : 'Share'}</span>
             </button>
           </div>
         </div>
-        <div className="modal-actions">
-          <button 
-            className="btn-close"
-            onClick={onClose}
-          >
+
+        {/* Footer */}
+        <div className="qr-modal-footer">
+          <button className="qr-close-btn" onClick={onClose}>
             Close
           </button>
         </div>
@@ -150,5 +176,4 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({
   );
 };
 
-export default QRCodeModal;
-
+export default memo(QRCodeModal);

@@ -50,7 +50,7 @@ export class UsersService {
   }
 
   // Helper method to transform user data: convert Buffer to base64 for file data
-  private transformUserForResponse(user: any): any {
+  protected transformUserForResponse(user: any): any {
     const userObj = user.toObject ? user.toObject() : user;
     
     // Convert profilePhoto Buffer to base64
@@ -104,11 +104,35 @@ export class UsersService {
     }
     
     const createdUser = await new this.userModel(userData).save();
+    
+    // Auto-generate QR code for drivers
+    if (createdUser.role === 'driver') {
+      console.log('[UsersService] Auto-generating QR code for driver:', createdUser._id);
+      try {
+        await this.generateQRCodeForDriver(createdUser._id.toString());
+        console.log('[UsersService] QR code generated successfully');
+        // Fetch updated user with QR code
+        const updatedUser = await this.userModel.findById(createdUser._id).exec();
+        return this.transformUserForResponse(updatedUser);
+      } catch (qrError) {
+        console.error('[UsersService] Failed to generate QR code:', qrError);
+        // Return user even if QR generation fails
+        return this.transformUserForResponse(createdUser);
+      }
+    }
+    
     return this.transformUserForResponse(createdUser);
   }
 
   async createWithFiles(createUserDto: CreateUserDto, files: Express.Multer.File[]): Promise<User> {
     try {
+      // Debug: Log what we received
+      console.log('=== CREATE USER DEBUG ===');
+      console.log('Received DTO keys:', Object.keys(createUserDto));
+      console.log('Password value:', createUserDto.password ? `"${createUserDto.password.substring(0, 3)}..." (length: ${createUserDto.password.length})` : 'UNDEFINED/NULL');
+      console.log('Full DTO:', JSON.stringify(createUserDto, null, 2));
+      console.log('=========================');
+      
       if (!createUserDto.password || !createUserDto.password.trim()) {
         throw new BadRequestException('Password is required');
       }
@@ -150,9 +174,31 @@ export class UsersService {
           userData.age = parseInt(userData.age);
         }
         
-        // Convert string dates to Date objects
-        if (userData.expiryDate && typeof userData.expiryDate === 'string') {
-          userData.expiryDate = new Date(userData.expiryDate);
+        // Convert string dates to Date objects (only if valid)
+        if (userData.expiryDate) {
+          if (typeof userData.expiryDate === 'string' && userData.expiryDate.trim()) {
+            const parsedDate = new Date(userData.expiryDate);
+            if (!isNaN(parsedDate.getTime())) {
+              userData.expiryDate = parsedDate;
+            } else {
+              delete userData.expiryDate; // Remove invalid date
+            }
+          } else {
+            delete userData.expiryDate; // Remove empty/null date
+          }
+        }
+        
+        // Clean up empty fields for non-student roles
+        if (userData.role !== 'student') {
+          delete userData.entryNumber;
+          delete userData.programme;
+          delete userData.department;
+          delete userData.hostel;
+          delete userData.emergencyDetails;
+          delete userData.disabilityType;
+          delete userData.udidNumber;
+          delete userData.disabilityPercentage;
+          delete userData.expiryDate;
         }
       } catch (parseError) {
         console.error('JSON parsing error:', parseError);
@@ -179,6 +225,23 @@ export class UsersService {
       
       console.log('Creating user with data:', JSON.stringify(userData, null, 2));
       const createdUser = await new this.userModel(userData).save();
+      
+      // Auto-generate QR code for drivers
+      if (createdUser.role === 'driver') {
+        console.log('[UsersService] Auto-generating QR code for driver:', createdUser._id);
+        try {
+          await this.generateQRCodeForDriver(createdUser._id.toString());
+          console.log('[UsersService] QR code generated successfully');
+          // Fetch updated user with QR code
+          const updatedUser = await this.userModel.findById(createdUser._id).exec();
+          return this.transformUserForResponse(updatedUser);
+        } catch (qrError) {
+          console.error('[UsersService] Failed to generate QR code:', qrError);
+          // Return user even if QR generation fails
+          return this.transformUserForResponse(createdUser);
+        }
+      }
+      
       return this.transformUserForResponse(createdUser);
     } catch (error) {
       console.error('Error creating user:', error);
@@ -186,10 +249,18 @@ export class UsersService {
     }
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(page?: number, limit?: number): Promise<User[]> {
     // First, update expiry status for all students
     await this.updateExpiryStatus();
-    const users = await this.userModel.find().exec();
+
+    let query = this.userModel.find();
+
+    if (page && limit) {
+      const skip = (page - 1) * limit;
+      query = query.sort({ createdAt: -1 }).skip(skip).limit(limit);
+    }
+
+    const users = await query.exec();
     return this.transformUsersForResponse(users);
   }
 
@@ -302,18 +373,15 @@ export class UsersService {
       throw new Error('Driver not found');
     }
 
-    // Generate unique QR code data (using driver ID and email)
-    const qrData = JSON.stringify({
-      driverId: driver._id.toString(),
-      email: driver.email,
-      name: driver.name,
-      timestamp: new Date().toISOString()
-    });
+    // Generate verification URL that can be scanned
+    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5173'; // OAE website URL
+    const verificationUrl = `${baseUrl}/verify-driver/${driver._id.toString()}?name=${encodeURIComponent(driver.name)}&email=${encodeURIComponent(driver.email)}`;
 
     // Generate QR code as base64 data URL
-    const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
-      errorCorrectionLevel: 'M',
-      margin: 1,
+    const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, {
+      errorCorrectionLevel: 'H',
+      margin: 2,
+      width: 300,
       color: {
         dark: '#000000',
         light: '#FFFFFF'

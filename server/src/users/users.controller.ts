@@ -12,7 +12,8 @@ import {
   Req,
   BadRequestException,
   Sse,
-  MessageEvent
+  MessageEvent,
+  SetMetadata
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { UsersService, UserChangeEvent } from './users.service';
@@ -75,8 +76,17 @@ export class UsersController {
       fileSize: 5 * 1024 * 1024, // 5MB limit
     },
   }))
-  create(@Body() createUserDto: CreateUserDto, @UploadedFiles() files: Express.Multer.File[]) {
-    return this.usersService.createWithFiles(createUserDto, files);
+  create(@Body() createUserDto: CreateUserDto, @UploadedFiles() files: Express.Multer.File[], @Req() req: Request) {
+    // Debug: Log raw request body
+    console.log('CONTROLLER DEBUG');
+    console.log('req.body keys:', Object.keys(req.body || {}));
+    console.log('req.body:', req.body);
+    console.log('createUserDto:', createUserDto);
+    console.log('Files count:', files?.length || 0);
+    
+    // Use req.body directly if @Body() is empty (multipart form issue)
+    const userData = Object.keys(createUserDto).length > 0 ? createUserDto : req.body;
+    return this.usersService.createWithFiles(userData as CreateUserDto, files);
   }
 
   @Get()

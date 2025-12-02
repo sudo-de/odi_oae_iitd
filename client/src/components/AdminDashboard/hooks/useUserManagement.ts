@@ -39,14 +39,39 @@ export const useUserManagement = (token: string) => {
     try {
       const formData = new FormData();
       
+      // Fields that need JSON serialization (nested objects)
+      const jsonFields = ['phone', 'hostel', 'emergencyDetails'];
+      
       // Add all form fields
       Object.entries(createUserData).forEach(([key, value]) => {
-        if (key === 'phone') {
-          formData.append('phone', JSON.stringify(value));
+        if (value === null || value === undefined) {
+          return; // Skip null/undefined values
+        }
+        
+        if (jsonFields.includes(key)) {
+          // Serialize nested objects as JSON
+          formData.append(key, JSON.stringify(value));
+        } else if (typeof value === 'object') {
+          // Handle any other objects
+          formData.append(key, JSON.stringify(value));
         } else {
-          formData.append(key, value.toString());
+          // Primitives (string, number, boolean)
+          formData.append(key, String(value));
         }
       });
+      
+      // Debug: Log what's being sent
+      console.log('=== FRONTEND CREATE USER DEBUG ===');
+      console.log('createUserData.password:', createUserData.password ? `"${createUserData.password.substring(0, 3)}..." (length: ${createUserData.password.length})` : 'EMPTY/UNDEFINED');
+      console.log('FormData entries:');
+      for (const [key, value] of formData.entries()) {
+        if (key === 'password') {
+          console.log(`  ${key}: ${value ? `"${String(value).substring(0, 3)}..." (length: ${String(value).length})` : 'EMPTY'}`);
+        } else if (key !== 'files') {
+          console.log(`  ${key}: ${String(value).substring(0, 50)}...`);
+        }
+      }
+      console.log('==================================');
       
       // Add files
       if (selectedFiles.profilePhoto) {
@@ -56,10 +81,10 @@ export const useUserManagement = (token: string) => {
         formData.append('files', selectedFiles.disabilityDocument);
       }
       
+      // Don't manually set Content-Type for multipart/form-data - axios will set it with boundary
       await axios.post('http://localhost:3000/users', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
         },
       });
       
@@ -182,8 +207,8 @@ export const useUserManagement = (token: string) => {
     updateUser,
     deleteUser,
     toggleUserStatus,
+    showNotification,
     generateQRCodeForDriver,
-    generateQRCodesForAllDrivers,
-    showNotification
+    generateQRCodesForAllDrivers
   };
 };

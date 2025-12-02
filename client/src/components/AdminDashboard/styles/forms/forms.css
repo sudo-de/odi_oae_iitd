@@ -2,23 +2,42 @@
 .user-form {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .form-section {
-  background: #f8f9fa;
-  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
   padding: 1.5rem;
-  border: 1px solid #e1e5e9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  transition: all 0.3s ease;
+}
+
+.form-section:hover {
+  border-color: rgba(120, 119, 198, 0.3);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(120, 119, 198, 0.1) inset;
 }
 
 .form-section h4 {
   margin: 0 0 1.5rem 0;
-  color: #333;
+  color: rgba(255, 255, 255, 0.95);
   font-size: 1.2rem;
   font-weight: 600;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #667eea;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(120, 119, 198, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 1rem;
 }
 
 .form-group {
@@ -30,44 +49,137 @@
 }
 
 .form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Required field indicator */
+.form-group.required label::after {
+  content: '*';
+  color: rgba(248, 113, 113, 0.95);
   font-size: 1rem;
+  margin-left: 0.25rem;
+  font-weight: 700;
+}
+
+/* Optional field indicator */
+.form-group.optional label::after {
+  content: '(optional)';
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.7rem;
+  margin-left: 0.5rem;
+  font-weight: 400;
+  text-transform: lowercase;
+  letter-spacing: 0;
 }
 
 .form-group input,
-.form-group select,
+.form-group select {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.95);
+  box-sizing: border-box;
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  font-family: inherit;
+  height: 48px;
+}
+
 .form-group textarea {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid #e1e5e9;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  background: white;
+  padding: 0.875rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.95);
   box-sizing: border-box;
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: rgba(120, 119, 198, 0.6);
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 
+    0 0 0 3px rgba(120, 119, 198, 0.2),
+    0 8px 25px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(120, 119, 198, 0.3) inset;
+  transform: translateY(-1px);
 }
 
-.form-group input[type="file"] {
-  padding: 0.5rem;
-  border: 2px dashed #e1e5e9;
-  background: #f8f9fa;
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.form-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
   cursor: pointer;
 }
 
+.form-group select option {
+  background: rgba(17, 17, 17, 0.95);
+  color: rgba(255, 255, 255, 0.95);
+  padding: 0.75rem;
+}
+
+.form-group input[type="file"] {
+  padding: 0.75rem;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .form-group input[type="file"]:hover {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.05);
+  border-color: rgba(120, 119, 198, 0.5);
+  background: rgba(0, 0, 0, 0.3);
+  border-style: solid;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(120, 119, 198, 0.2);
+}
+
+.form-group input[type="file"]:focus {
+  border-color: rgba(120, 119, 198, 0.6);
+  box-shadow: 
+    0 0 0 3px rgba(120, 119, 198, 0.2),
+    0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .form-group input[type="checkbox"] {
@@ -90,20 +202,32 @@
 }
 
 .file-info {
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  background: #e8f5e8;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  color: #28a745;
-  border: 1px solid #c3e6c3;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(40, 167, 69, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: rgba(76, 217, 100, 0.95);
+  border: 1px solid rgba(40, 167, 69, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.file-info::before {
+  content: '✓';
+  font-weight: bold;
+  font-size: 1rem;
 }
 
 .form-help {
   display: block;
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  color: #6c757d;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
 }
 
 /* Form Grid Layout */
@@ -125,17 +249,129 @@
 .form-group.error input,
 .form-group.error select,
 .form-group.error textarea {
-  border-color: #dc3545;
+  border-color: rgba(220, 53, 69, 0.6);
+  box-shadow: 
+    0 0 0 3px rgba(220, 53, 69, 0.2),
+    0 8px 25px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(220, 53, 69, 0.3) inset;
 }
 
 .form-group.error .form-help {
-  color: #dc3545;
+  color: rgba(255, 107, 107, 0.9);
 }
 
 .form-group.success input,
 .form-group.success select,
 .form-group.success textarea {
-  border-color: #28a745;
+  border-color: rgba(40, 167, 69, 0.6);
+  box-shadow: 
+    0 0 0 3px rgba(40, 167, 69, 0.2),
+    0 8px 25px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(40, 167, 69, 0.3) inset;
+}
+
+/* Native HTML5 validation styles */
+.form-group input:required,
+.form-group select:required,
+.form-group textarea:required {
+  border-left: 3px solid rgba(120, 119, 198, 0.5);
+}
+
+.form-group input:required:valid,
+.form-group select:required:valid,
+.form-group textarea:required:valid {
+  border-left-color: rgba(74, 222, 128, 0.7);
+}
+
+.form-group input:required:invalid:not(:placeholder-shown),
+.form-group select:required:invalid,
+.form-group textarea:required:invalid:not(:placeholder-shown) {
+  border-left-color: rgba(248, 113, 113, 0.7);
+}
+
+.form-group input:required:focus,
+.form-group select:required:focus,
+.form-group textarea:required:focus {
+  border-left-color: rgba(120, 119, 198, 0.8);
+}
+
+/* Error message display */
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(220, 53, 69, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  color: rgba(248, 113, 113, 0.95);
+  font-size: 0.8rem;
+  animation: shakeError 0.4s ease;
+}
+
+.form-error::before {
+  content: '⚠️';
+  font-size: 0.9rem;
+}
+
+@keyframes shakeError {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-3px); }
+}
+
+/* Success indicator */
+.form-success {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: rgba(74, 222, 128, 0.95);
+  font-size: 0.8rem;
+}
+
+.form-success::before {
+  content: '✓';
+  font-weight: 700;
+}
+
+/* Required fields legend */
+.form-legend {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.form-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.form-legend-item .required-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(248, 113, 113, 0.9);
+}
+
+.form-legend-item .optional-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Responsive Form */

@@ -5,28 +5,46 @@ export type UserDocument = User & Document;
 
 @Schema({ timestamps: true })
 export class User {
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   name: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+  })
   email: string;
 
-  @Prop({ required: true })
+  @Prop({ type: String, required: true, minlength: 6 })
   password: string;
 
-  @Prop()
+  @Prop({ type: Number, min: 0, max: 120 })
   age?: number;
 
-  @Prop({ default: true })
+  @Prop({ type: Boolean, default: true })
   isActive: boolean;
 
-  @Prop()
+  @Prop({ type: String })
   resetPasswordToken?: string;
 
-  @Prop()
+  @Prop({ type: Date })
   resetPasswordExpires?: Date;
 
-  @Prop({ default: 'user' })
+  @Prop({ type: String })
+  resetPasswordOtp?: string;
+
+  @Prop({ type: Date })
+  resetPasswordOtpExpires?: Date;
+
+  @Prop({
+    type: String,
+    default: 'user',
+    enum: ['admin', 'staff', 'student', 'driver'],
+    required: true
+  })
   role: string;
 
   // Common fields for all user types
@@ -45,13 +63,13 @@ export class User {
   };
 
   // Student-specific fields
-  @Prop()
+  @Prop({ type: String })
   entryNumber?: string;
 
-  @Prop()
+  @Prop({ type: String })
   programme?: string;
 
-  @Prop()
+  @Prop({ type: String })
   department?: string;
 
   @Prop({ type: Object })
@@ -68,13 +86,13 @@ export class User {
     additionalPhone?: string;
   };
 
-  @Prop()
+  @Prop({ type: String })
   disabilityType?: string;
 
-  @Prop()
+  @Prop({ type: String })
   udidNumber?: string;
 
-  @Prop()
+  @Prop({ type: Number })
   disabilityPercentage?: number;
 
   @Prop({ type: Object })
@@ -85,15 +103,45 @@ export class User {
     data: Buffer;
   };
 
-  @Prop()
+  @Prop({ type: Date })
   expiryDate?: Date;
 
-  @Prop({ default: false })
+  @Prop({ type: Boolean, default: false })
   isExpired?: boolean;
 
   // Driver-specific fields
-  @Prop()
-  qrCode?: string; // Placeholder for QR code generation
+  @Prop({ type: String })
+  qrCode?: string;
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+// Create indexes for better query performance
+UserSchema.index({ email: 1 }, { unique: true });
+UserSchema.index({ role: 1 });
+UserSchema.index({ isActive: 1 });
+UserSchema.index({ 'phone.number': 1 });
+UserSchema.index({ entryNumber: 1 });
+UserSchema.index({ programme: 1 });
+UserSchema.index({ department: 1 });
+UserSchema.index({ 'hostel.name': 1 });
+UserSchema.index({ disabilityType: 1 });
+UserSchema.index({ createdAt: -1 });
+UserSchema.index({ updatedAt: -1 });
+
+// Create compound indexes for common queries
+UserSchema.index({ role: 1, isActive: 1 });
+UserSchema.index({ role: 1, programme: 1 });
+UserSchema.index({ role: 1, department: 1 });
+
+// Transform function for JSON responses
+UserSchema.set('toJSON', {
+  virtuals: true,
+  versionKey: false,
+  transform: (_: unknown, ret: Record<string, any>) => {
+    ret.id = ret._id?.toString?.() ?? ret._id;
+    delete ret._id;
+    return ret;
+  },
+});

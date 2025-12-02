@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class RideBookQrCodeScreen extends StatefulWidget {
@@ -14,6 +15,7 @@ class _RideBookQrCodeScreenState extends State<RideBookQrCodeScreen> {
     detectionSpeed: DetectionSpeed.normal,
     facing: CameraFacing.back,
   );
+  final ImagePicker _imagePicker = ImagePicker();
 
   bool _isProcessing = false;
   String? _lastCode;
@@ -31,25 +33,47 @@ class _RideBookQrCodeScreenState extends State<RideBookQrCodeScreen> {
       return;
     }
 
-    String? rawValue;
-    for (final barcode in capture.barcodes) {
-      final value = barcode.rawValue;
-      if (value != null && value.isNotEmpty) {
-        rawValue = value;
-        break;
-      }
-    }
-
+    final rawValue = _extractRawValue(capture);
     if (rawValue == null) {
       return;
     }
 
+    await _handleScanResult(rawValue);
+  }
+
+  String? _extractRawValue(BarcodeCapture? capture) {
+    if (capture == null) {
+      return null;
+    }
+
+    for (final barcode in capture.barcodes) {
+      final value = barcode.rawValue;
+      if (value != null && value.isNotEmpty) {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _handleScanResult(String rawValue) async {
     setState(() {
       _isProcessing = true;
       _lastCode = rawValue;
     });
 
-    await _controller.stop();
+    final bool wasRunning = _controller.value.isRunning;
+
+    if (wasRunning) {
+      await _controller.stop();
+      if (!mounted) {
+        return;
+      }
+      if (_torchEnabled) {
+        setState(() {
+          _torchEnabled = false;
+        });
+      }
+    }
 
     if (!mounted) {
       return;
@@ -63,7 +87,7 @@ class _RideBookQrCodeScreenState extends State<RideBookQrCodeScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (sheetContext) => _ScanResultSheet(
-        code: rawValue!,
+        code: rawValue,
         onConfirm: () => Navigator.of(sheetContext).pop(true),
         onScanAgain: () => Navigator.of(sheetContext).pop(false),
       ),
@@ -82,7 +106,75 @@ class _RideBookQrCodeScreenState extends State<RideBookQrCodeScreen> {
       _isProcessing = false;
     });
 
-    await _controller.start();
+    if (wasRunning) {
+      await _controller.start();
+    }
+  }
+
+  Future<void> _scanFromGallery() async {
+    if (_isProcessing) {
+      return;
+    }
+
+    try {
+      final XFile? file = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+      );
+      if (file == null) {
+        return;
+      }
+
+      setState(() {
+        _isProcessing = true;
+      });
+
+      final capture = await _controller.analyzeImage(
+        file.path,
+        formats: const [BarcodeFormat.qrCode],
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final rawValue = _extractRawValue(capture);
+      if (rawValue == null) {
+        setState(() {
+          _isProcessing = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No QR code found in the selected image.'),
+          ),
+        );
+        return;
+      }
+
+      await _handleScanResult(rawValue);
+    } on MobileScannerException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isProcessing = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unable to process the image: ${error.errorCode.name}'),
+        ),
+      );
+    } on Exception catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isProcessing = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to open image: ${error.toString()}')),
+      );
+    }
   }
 
   Future<void> _toggleTorch() async {
@@ -99,9 +191,7 @@ class _RideBookQrCodeScreenState extends State<RideBookQrCodeScreen> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unable to toggle flash: ${error.toString()}'),
-        ),
+        SnackBar(content: Text('Unable to toggle flash: ${error.toString()}')),
       );
     }
   }
@@ -112,8 +202,9 @@ class _RideBookQrCodeScreenState extends State<RideBookQrCodeScreen> {
       return;
     }
     setState(() {
-      _cameraFacing =
-          _cameraFacing == CameraFacing.back ? CameraFacing.front : CameraFacing.back;
+      _cameraFacing = _cameraFacing == CameraFacing.back
+          ? CameraFacing.front
+          : CameraFacing.back;
     });
   }
 
@@ -125,6 +216,11 @@ class _RideBookQrCodeScreenState extends State<RideBookQrCodeScreen> {
       appBar: AppBar(
         title: const Text('Scan Driver QR'),
         actions: [
+          IconButton(
+            tooltip: 'Scan from photo',
+            icon: const Icon(Icons.photo_library_outlined),
+            onPressed: _isProcessing ? null : _scanFromGallery,
+          ),
           if (_lastCode != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -189,21 +285,31 @@ class _RideBookQrCodeScreenState extends State<RideBookQrCodeScreen> {
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 12,
                     children: [
                       FilledButton.tonalIcon(
-                        onPressed: _toggleTorch,
-                        icon: Icon(_torchEnabled ? Icons.flash_on : Icons.flash_off),
+                        onPressed: _isProcessing ? null : _toggleTorch,
+                        icon: Icon(
+                          _torchEnabled ? Icons.flash_on : Icons.flash_off,
+                        ),
                         label: Text(_torchEnabled ? 'Flash on' : 'Flash off'),
                       ),
-                      const SizedBox(width: 12),
                       FilledButton.tonalIcon(
-                        onPressed: _switchCamera,
+                        onPressed: _isProcessing ? null : _switchCamera,
                         icon: const Icon(Icons.cameraswitch),
                         label: Text(
-                          _cameraFacing == CameraFacing.back ? 'Rear camera' : 'Front camera',
+                          _cameraFacing == CameraFacing.back
+                              ? 'Rear camera'
+                              : 'Front camera',
                         ),
+                      ),
+                      FilledButton.tonalIcon(
+                        onPressed: _isProcessing ? null : _scanFromGallery,
+                        icon: const Icon(Icons.photo_library_outlined),
+                        label: const Text('From photos'),
                       ),
                     ],
                   ),
@@ -211,7 +317,9 @@ class _RideBookQrCodeScreenState extends State<RideBookQrCodeScreen> {
                     const SizedBox(height: 16),
                     Text(
                       'Last scanned: $_lastCode',
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.hintColor,
+                      ),
                     ),
                   ],
                 ],
@@ -232,7 +340,10 @@ class _ScannerOverlay extends StatelessWidget {
         final borderSize = 24.0;
         final borderWidth = 4.0;
         return CustomPaint(
-          painter: _CornerBorderPainter(borderSize: borderSize, borderWidth: borderWidth),
+          painter: _CornerBorderPainter(
+            borderSize: borderSize,
+            borderWidth: borderWidth,
+          ),
         );
       },
     );
@@ -312,7 +423,9 @@ class _ScanResultSheet extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Driver QR detected',
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 12),
           Container(
@@ -327,7 +440,9 @@ class _ScanResultSheet extends StatelessWidget {
               children: [
                 Text(
                   code,
-                  style: theme.textTheme.titleMedium?.copyWith(fontFamily: 'monospace'),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontFamily: 'monospace',
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -358,4 +473,3 @@ class _ScanResultSheet extends StatelessWidget {
     );
   }
 }
-

@@ -148,5 +148,6 @@ export const calculateStats = (users: User[]) => {
     studentUsers: users.filter(u => u.role === 'student').length,
     driverUsers: users.filter(u => u.role === 'driver').length,
     staffUsers: users.filter(u => u.role === 'staff').length,
+    adminUsers: users.filter(u => u.role === 'admin').length,
   };
 };

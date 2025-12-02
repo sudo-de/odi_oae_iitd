@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo, memo } from 'react';
 import type { User } from '../types';
 import { formatDate } from '../utils';
 import QRCodeModal from './QRCodeModal';
@@ -9,6 +9,77 @@ interface UserDetailsModalProps {
   onClose: () => void;
 }
 
+// Role configuration
+const ROLE_CONFIG: Record<string, { icon: string; label: string; color: string; bgColor: string }> = {
+  student: { icon: '🎓', label: 'Student', color: '#3b82f6', bgColor: 'rgba(59, 130, 246, 0.15)' },
+  driver: { icon: '🚗', label: 'Driver', color: '#22c55e', bgColor: 'rgba(34, 197, 94, 0.15)' },
+  staff: { icon: '👔', label: 'Staff', color: '#a855f7', bgColor: 'rgba(168, 85, 247, 0.15)' },
+  admin: { icon: '👑', label: 'Admin', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.15)' },
+};
+
+// Detail Item Component
+const DetailItem = memo(({ icon, label, value, fullWidth = false }: { 
+  icon?: string; 
+  label: string; 
+  value: React.ReactNode; 
+  fullWidth?: boolean 
+}) => (
+  <div className={`detail-card ${fullWidth ? 'full-width' : ''}`}>
+    {icon && <span className="detail-icon">{icon}</span>}
+    <div className="detail-content">
+      <span className="detail-label">{label}</span>
+      <span className="detail-value">{value || 'Not provided'}</span>
+    </div>
+  </div>
+));
+
+// Section Component
+const Section = memo(({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }) => (
+  <div className="details-section">
+    <div className="section-header">
+      <span className="section-icon">{icon}</span>
+      <h4>{title}</h4>
+    </div>
+    <div className="section-content">
+      {children}
+    </div>
+  </div>
+));
+
+// File Preview Component
+const FilePreview = memo(({ file, title, icon }: { 
+  file: { data: string; mimetype: string; filename: string; size: number }; 
+  title: string; 
+  icon: string 
+}) => {
+  const dataUrl = useMemo(() => {
+    if (!file.data) return '';
+    if (file.data.startsWith('data:')) return file.data;
+    return `data:${file.mimetype};base64,${file.data}`;
+  }, [file.data, file.mimetype]);
+
+  if (!file.data) return null;
+
+  return (
+    <div className="file-card">
+      <div className="file-card-header">
+        <span className="file-icon">{icon}</span>
+        <div className="file-info">
+          <span className="file-name">{file.filename}</span>
+          <span className="file-size">{(file.size / 1024).toFixed(1)} KB</span>
+        </div>
+      </div>
+      <div className="file-card-preview">
+        {file.mimetype === 'application/pdf' ? (
+          <iframe src={dataUrl} className="pdf-preview" title={title} />
+        ) : (
+          <img src={dataUrl} alt={title} className="image-preview" />
+        )}
+      </div>
+    </div>
+  );
+});
+
 const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   show,
   viewingUser,
@@ -16,271 +87,200 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
 }) => {
   const [showQRModal, setShowQRModal] = useState(false);
 
+  const handleOverlayClick = useCallback((e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) onClose();
+  }, [onClose]);
+
+  const handleOpenQR = useCallback(() => setShowQRModal(true), []);
+  const handleCloseQR = useCallback(() => setShowQRModal(false), []);
+
+  const roleConfig = useMemo(() => 
+    viewingUser ? ROLE_CONFIG[viewingUser.role] || ROLE_CONFIG.student : ROLE_CONFIG.student
+  , [viewingUser]);
+
   if (!show || !viewingUser) return null;
 
-  // Helper function to get data URL from base64 string
-  const getDataUrl = (base64Data: string, mimetype: string): string => {
-    if (!base64Data) return '';
-    // If it's already a data URL, return as is
-    if (base64Data.startsWith('data:')) return base64Data;
-    // Otherwise, create data URL from base64
-    return `data:${mimetype};base64,${base64Data}`;
-  };
-
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay user-details-overlay" onClick={handleOverlayClick}>
       <div className="modal user-details-modal">
-        <div className="modal-header">
-          <h3>User Details: {viewingUser.name}</h3>
-          <button 
-            className="modal-close"
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </div>
-        <div className="user-details-content">
-          {/* Basic Information */}
-          <div className="details-section">
-            <h4>Basic Information</h4>
-            <div className="details-grid">
-              <div className="detail-item">
-                <label>Name:</label>
-                <span>{viewingUser.name}</span>
-              </div>
-              <div className="detail-item">
-                <label>Email:</label>
-                <span>{viewingUser.email}</span>
-              </div>
-              <div className="detail-item">
-                <label>Created:</label>
-                <span>{formatDate(viewingUser.createdAt)}</span>
-              </div>
-              <div className="detail-item">
-                <label>Last Updated:</label>
-                <span>{formatDate(viewingUser.updatedAt)}</span>
+        {/* Header */}
+        <div className="user-modal-header" style={{ '--accent-color': roleConfig.color } as React.CSSProperties}>
+          <div className="header-content">
+            <div className="user-avatar-large" style={{ background: roleConfig.bgColor, borderColor: roleConfig.color }}>
+              <span>{viewingUser.name.charAt(0).toUpperCase()}</span>
+            </div>
+            <div className="user-header-info">
+              <h2>{viewingUser.name}</h2>
+              <div className="user-header-meta">
+                <span className="role-badge" style={{ background: roleConfig.bgColor, color: roleConfig.color }}>
+                  {roleConfig.icon} {roleConfig.label}
+                </span>
               </div>
             </div>
           </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close">×</button>
+        </div>
+
+        {/* Body */}
+        <div className="user-modal-body">
+          {/* Basic Information */}
+          <Section icon="📋" title="Basic Information">
+            <div className="details-grid">
+              <DetailItem icon="👤" label="Full Name" value={viewingUser.name} />
+              <DetailItem icon="📧" label="Email Address" value={viewingUser.email} />
+              <DetailItem icon="📅" label="Created" value={formatDate(viewingUser.createdAt)} />
+              <DetailItem icon="🔄" label="Last Updated" value={formatDate(viewingUser.updatedAt)} />
+            </div>
+          </Section>
 
           {/* Contact Information */}
           {viewingUser.phone && (
-            <div className="details-section">
-              <h4>Contact Information</h4>
+            <Section icon="📞" title="Contact Information">
               <div className="details-grid">
-                <div className="detail-item">
-                  <label>Phone:</label>
-                  <span>{viewingUser.phone.countryCode} {viewingUser.phone.number}</span>
-                </div>
+                <DetailItem 
+                  icon="📱" 
+                  label="Phone Number" 
+                  value={`${viewingUser.phone.countryCode} ${viewingUser.phone.number}`} 
+                />
               </div>
-            </div>
+            </Section>
           )}
 
           {/* Student-specific Information */}
           {viewingUser.role === 'student' && (
             <>
-              <div className="details-section">
-                <h4>Academic Information</h4>
+              <Section icon="🎓" title="Academic Information">
                 <div className="details-grid">
-                  <div className="detail-item">
-                    <label>Entry Number:</label>
-                    <span>{viewingUser.entryNumber || 'Not provided'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Programme:</label>
-                    <span>{viewingUser.programme || 'Not provided'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Department:</label>
-                    <span>{viewingUser.department || 'Not provided'}</span>
-                  </div>
+                  <DetailItem icon="🆔" label="Entry Number" value={viewingUser.entryNumber} />
+                  <DetailItem icon="📚" label="Programme" value={viewingUser.programme} />
+                  <DetailItem icon="🏛️" label="Department" value={viewingUser.department} />
                   {viewingUser.expiryDate && (
-                    <div className="detail-item">
-                      <label>Expiry Date:</label>
-                      <div className="expiry-container">
+                    <DetailItem 
+                      icon="⏳" 
+                      label="Expiry Date" 
+                      value={
+                        <div className="expiry-info">
                         <span>{new Date(viewingUser.expiryDate).toLocaleDateString()}</span>
-                        {viewingUser.isExpired ? (
-                          <span className="status-badge expired">(Auto-expired)</span>
-                        ) : (
-                          <span className="status-badge active">(Valid)</span>
-                        )}
+                          <span className={`expiry-badge ${viewingUser.isExpired ? 'expired' : 'valid'}`}>
+                            {viewingUser.isExpired ? '⚠️ Expired' : '✅ Valid'}
+                          </span>
                       </div>
-                    </div>
+                      } 
+                    />
                   )}
                 </div>
-              </div>
+              </Section>
 
               {viewingUser.hostel && (
-                <div className="details-section">
-                  <h4>Hostel Information</h4>
+                <Section icon="🏠" title="Hostel Information">
                   <div className="details-grid">
-                    <div className="detail-item">
-                      <label>Hostel Name:</label>
-                      <span>{viewingUser.hostel.name}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Room Number:</label>
-                      <span>{viewingUser.hostel.roomNo}</span>
-                    </div>
+                    <DetailItem icon="🏨" label="Hostel Name" value={viewingUser.hostel.name} />
+                    <DetailItem icon="🚪" label="Room Number" value={viewingUser.hostel.roomNo} />
                   </div>
-                </div>
+                </Section>
               )}
 
               {viewingUser.emergencyDetails && (
-                <div className="details-section">
-                  <h4>Emergency Contact Details</h4>
+                <Section icon="🚨" title="Emergency Contact">
                   <div className="details-grid">
-                    <div className="detail-item">
-                      <label>Emergency Contact Name:</label>
-                      <span>{viewingUser.emergencyDetails.name}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Emergency Contact Address:</label>
-                      <span>{viewingUser.emergencyDetails.address}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Emergency Contact Phone:</label>
-                      <span>{viewingUser.emergencyDetails.phone}</span>
-                    </div>
+                    <DetailItem icon="👤" label="Contact Name" value={viewingUser.emergencyDetails.name} />
+                    <DetailItem icon="📍" label="Address" value={viewingUser.emergencyDetails.address} fullWidth />
+                    <DetailItem icon="📞" label="Phone" value={viewingUser.emergencyDetails.phone} />
                     {viewingUser.emergencyDetails.additionalPhone && (
-                      <div className="detail-item">
-                        <label>Additional Phone:</label>
-                        <span>{viewingUser.emergencyDetails.additionalPhone}</span>
-                      </div>
+                      <DetailItem icon="📱" label="Additional Phone" value={viewingUser.emergencyDetails.additionalPhone} />
                     )}
                   </div>
-                </div>
+                </Section>
               )}
 
               {(viewingUser.disabilityType || viewingUser.udidNumber || viewingUser.disabilityPercentage) && (
-                <div className="details-section">
-                  <h4>Disability Information</h4>
+                <Section icon="♿" title="Disability Information">
                   <div className="details-grid">
                     {viewingUser.disabilityType && (
-                      <div className="detail-item">
-                        <label>Disability Type:</label>
-                        <span>{viewingUser.disabilityType}</span>
-                      </div>
+                      <DetailItem icon="📋" label="Disability Type" value={viewingUser.disabilityType} />
                     )}
                     {viewingUser.udidNumber && (
-                      <div className="detail-item">
-                        <label>UDID Number:</label>
-                        <span>{viewingUser.udidNumber}</span>
-                      </div>
+                      <DetailItem icon="🆔" label="UDID Number" value={viewingUser.udidNumber} />
                     )}
                     {viewingUser.disabilityPercentage && (
-                      <div className="detail-item">
-                        <label>Disability Percentage:</label>
-                        <span>{viewingUser.disabilityPercentage}%</span>
-                      </div>
+                      <DetailItem icon="📊" label="Percentage" value={`${viewingUser.disabilityPercentage}%`} />
                     )}
                   </div>
-                </div>
+                </Section>
               )}
 
-              {/* File Information */}
-              {(viewingUser.profilePhoto || viewingUser.disabilityDocument) && (
-                <div className="details-section">
-                  <h4>Files</h4>
-                  <div className="file-preview-grid">
-                    {viewingUser.profilePhoto && viewingUser.profilePhoto.data && (
-                      <div className="file-preview-item">
-                        <div className="file-preview-header">
-                          <div className="file-icon">📷</div>
-                          <div className="file-details">
-                            <div className="file-name">{viewingUser.profilePhoto.filename}</div>
-                            <div className="file-meta">
-                              {viewingUser.profilePhoto.mimetype} • {(viewingUser.profilePhoto.size / 1024).toFixed(1)} KB
-                            </div>
-                          </div>
-                        </div>
-                        <div className="file-preview-content">
-                          <img 
-                            src={getDataUrl(viewingUser.profilePhoto.data, viewingUser.profilePhoto.mimetype)} 
-                            alt="Profile Photo"
-                            className="file-preview-image"
-                          />
-                        </div>
-                      </div>
+              {/* Files */}
+              {(viewingUser.profilePhoto?.data || viewingUser.disabilityDocument?.data) && (
+                <Section icon="📁" title="Documents">
+                  <div className="files-grid">
+                    {viewingUser.profilePhoto?.data && (
+                      <FilePreview file={viewingUser.profilePhoto} title="Profile Photo" icon="📷" />
                     )}
-                    {viewingUser.disabilityDocument && viewingUser.disabilityDocument.data && (
-                      <div className="file-preview-item">
-                        <div className="file-preview-header">
-                          <div className="file-icon">📄</div>
-                          <div className="file-details">
-                            <div className="file-name">{viewingUser.disabilityDocument.filename}</div>
-                            <div className="file-meta">
-                              {viewingUser.disabilityDocument.mimetype} • {(viewingUser.disabilityDocument.size / 1024).toFixed(1)} KB
-                            </div>
-                          </div>
-                        </div>
-                        <div className="file-preview-content">
-                          {viewingUser.disabilityDocument.mimetype === 'application/pdf' ? (
-                            <iframe
-                              src={getDataUrl(viewingUser.disabilityDocument.data, viewingUser.disabilityDocument.mimetype)}
-                              className="file-preview-pdf"
-                              title="Disability Document"
-                            />
-                          ) : (
-                            <img 
-                              src={getDataUrl(viewingUser.disabilityDocument.data, viewingUser.disabilityDocument.mimetype)} 
-                              alt="Disability Document"
-                              className="file-preview-image"
-                            />
-                          )}
-                        </div>
-                      </div>
+                    {viewingUser.disabilityDocument?.data && (
+                      <FilePreview file={viewingUser.disabilityDocument} title="Disability Document" icon="📄" />
                     )}
                   </div>
-                </div>
+                </Section>
               )}
             </>
           )}
 
           {/* Driver-specific Information */}
           {viewingUser.role === 'driver' && (
-            <div className="details-section">
-              <h4>Driver Information</h4>
-              <div className="details-grid">
+            <>
+
+
+
+              {/* Documents */}
+              <Section icon="📁" title="Documents">
+                <div className="files-grid">
+                  {/* Profile Photo */}
+                  {viewingUser.profilePhoto?.data && (
+                    <FilePreview file={viewingUser.profilePhoto} title="Profile Photo" icon="📷" />
+                  )}
+
+                </div>
+              </Section>
+
+              {/* QR Code Section */}
+              <Section icon="📱" title="Digital Verification">
                 {viewingUser.qrCode ? (
-                  <div className="detail-item qr-code-item">
-                    <label>QR Code:</label>
-                    <div className="qr-code-display">
-                      <img 
-                        src={viewingUser.qrCode} 
-                        alt="Driver QR Code" 
-                        className="qr-code-image-large"
-                        onClick={() => setShowQRModal(true)}
-                        style={{ cursor: 'pointer' }}
-                        title="Click to view/share"
-                      />
-                      <div className="qr-code-actions-inline">
-                        <button
-                          className="qr-view-share-btn"
-                          onClick={() => setShowQRModal(true)}
-                        >
-                          👁️ View / 🔗 Share
-                        </button>
+                  <div className="qr-section">
+                    <div className="qr-preview-card" onClick={handleOpenQR}>
+                      <img src={viewingUser.qrCode} alt="Driver QR Code" className="qr-preview-image" />
+                      <div className="qr-preview-overlay">
+                        <span className="view-text">Click to View</span>
                       </div>
                     </div>
+                    <div className="qr-info">
+                      <div className="qr-details">
+                        <span className="qr-label">Driver ID:</span>
+                        <span className="qr-value">{viewingUser._id || 'DRV-001'}</span>
+                      </div>
+                      <div className="qr-details">
+                        <span className="qr-label">Verification:</span>
+                        <span className="qr-value">✅ Active</span>
+                      </div>
+                    </div>
+                    <button className="qr-action-btn-large" onClick={handleOpenQR}>
+                      <span>📱</span> View QR Code
+                    </button>
                   </div>
                 ) : (
-                  <div className="detail-item">
-                    <label>QR Code:</label>
-                    <span className="no-qr-code">No QR code generated yet</span>
+                  <div className="no-qr-message">
+                    <span className="no-qr-icon">📵</span>
+                    <p>No QR code generated yet</p>
+                    <p className="qr-hint">QR code will be auto-generated when driver becomes active</p>
                   </div>
                 )}
-              </div>
-            </div>
+              </Section>
+            </>
           )}
         </div>
-        <div className="modal-actions">
-          <button 
-            className="btn-close"
-            onClick={onClose}
-          >
-            Close
-          </button>
+
+        {/* Footer */}
+        <div className="user-modal-footer">
+          <button className="close-btn" onClick={onClose}>Close</button>
         </div>
       </div>
 
@@ -291,11 +291,11 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
           qrCode={viewingUser.qrCode}
           driverName={viewingUser.name}
           driverEmail={viewingUser.email}
-          onClose={() => setShowQRModal(false)}
+          onClose={handleCloseQR}
         />
       )}
     </div>
   );
 };
 
-export default UserDetailsModal;
+export default memo(UserDetailsModal);

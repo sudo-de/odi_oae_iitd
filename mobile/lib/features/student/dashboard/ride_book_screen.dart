@@ -10,7 +10,6 @@ class RideBookScreen extends StatefulWidget {
 }
 
 class _RideBookScreenState extends State<RideBookScreen> {
-  static const List<String> _rideTypes = ['Campus shuttle', 'Electric cart', 'Cab'];
   static const List<_UpcomingRide> _upcomingRides = [
     _UpcomingRide(
       route: 'Hostel Gate 3 → Lecture Hall Complex',
@@ -27,33 +26,20 @@ class _RideBookScreenState extends State<RideBookScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _dropController = TextEditingController();
-  final TextEditingController _notesController = TextEditingController();
 
-  DateTime? _selectedDate;
-  TimeOfDay? _selectedTime;
-  String _selectedRideType = _rideTypes.first;
-  bool _shareRideDetails = true;
+  String? _driverQrCode;
   bool _isSubmitting = false;
 
   @override
   void dispose() {
     _pickupController.dispose();
     _dropController.dispose();
-    _notesController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final localizations = MaterialLocalizations.of(context);
-
-    final dateLabel = _selectedDate != null
-        ? localizations.formatMediumDate(_selectedDate!)
-        : 'Choose date';
-    final timeLabel = _selectedTime != null
-        ? localizations.formatTimeOfDay(_selectedTime!, alwaysUse24HourFormat: false)
-        : 'Choose time';
 
     return Scaffold(
       appBar: AppBar(
@@ -62,23 +48,7 @@ class _RideBookScreenState extends State<RideBookScreen> {
           IconButton(
             tooltip: 'Scan driver QR',
             icon: const Icon(Icons.qr_code_scanner_outlined),
-            onPressed: () async {
-              final result = await Navigator.of(context).push<String>(
-                MaterialPageRoute(
-                  builder: (_) => const RideBookQrCodeScreen(),
-                ),
-              );
-
-              if (!mounted || result == null) {
-                return;
-              }
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Driver QR confirmed: $result'),
-                ),
-              );
-            },
+            onPressed: _startDriverQrScan,
           ),
         ],
       ),
@@ -90,7 +60,9 @@ class _RideBookScreenState extends State<RideBookScreen> {
             children: [
               Text(
                 'Plan your campus commute',
-                style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -118,7 +90,9 @@ class _RideBookScreenState extends State<RideBookScreen> {
                             prefixIcon: Icon(Icons.my_location_outlined),
                           ),
                           validator: (value) =>
-                              (value == null || value.trim().isEmpty) ? 'Enter a pickup point' : null,
+                              (value == null || value.trim().isEmpty)
+                              ? 'Enter a pickup point'
+                              : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -130,75 +104,13 @@ class _RideBookScreenState extends State<RideBookScreen> {
                             prefixIcon: Icon(Icons.location_on_outlined),
                           ),
                           validator: (value) =>
-                              (value == null || value.trim().isEmpty) ? 'Enter a drop-off point' : null,
+                              (value == null || value.trim().isEmpty)
+                              ? 'Enter a drop-off point'
+                              : null,
                         ),
                         const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: _selectedRideType,
-                          decoration: const InputDecoration(
-                            labelText: 'Ride type',
-                            prefixIcon: Icon(Icons.directions_bus_filled_outlined),
-                          ),
-                          items: _rideTypes
-                              .map(
-                                (type) => DropdownMenuItem<String>(
-                                  value: type,
-                                  child: Text(type),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value == null) {
-                              return;
-                            }
-                            setState(() {
-                              _selectedRideType = value;
-                            });
-                          },
-                        ),
+                        _buildDriverVerificationSection(context),
                         const SizedBox(height: 16),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _DateTimePickerButton(
-                                label: 'Date',
-                                valueText: dateLabel,
-                                isSet: _selectedDate != null,
-                                icon: Icons.calendar_today_outlined,
-                                onPressed: _selectDate,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _DateTimePickerButton(
-                                label: 'Time',
-                                valueText: timeLabel,
-                                isSet: _selectedTime != null,
-                                icon: Icons.schedule_outlined,
-                                onPressed: _selectTime,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _notesController,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'Notes to driver (optional)',
-                            hintText: 'Add details such as luggage or accessibility needs',
-                            alignLabelWithHint: true,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        SwitchListTile(
-                          value: _shareRideDetails,
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Share ride details'),
-                          subtitle: const Text('Notify your guardian or roommates about this booking.'),
-                          onChanged: (value) => setState(() => _shareRideDetails = value),
-                        ),
                         const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,
@@ -208,7 +120,9 @@ class _RideBookScreenState extends State<RideBookScreen> {
                                 ? const SizedBox(
                                     width: 16,
                                     height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : const Text('Confirm booking'),
                           ),
@@ -229,6 +143,24 @@ class _RideBookScreenState extends State<RideBookScreen> {
     );
   }
 
+  Future<void> _startDriverQrScan() async {
+    final result = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const RideBookQrCodeScreen()),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    setState(() {
+      _driverQrCode = result;
+    });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Driver QR confirmed: $result')));
+  }
+
   Widget _buildRideTipsCard(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -241,23 +173,117 @@ class _RideBookScreenState extends State<RideBookScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.tips_and_updates_outlined, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.tips_and_updates_outlined,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(width: 12),
                 Text(
                   'Booking tips',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            const Text('• Book at least 15 minutes before departure for guaranteed slots.'),
+            const Text(
+              '• Book at least 15 minutes before departure for guaranteed slots.',
+            ),
             const SizedBox(height: 4),
-            const Text('• Shuttle services are free for campus loops; cabs are chargeable.'),
+            const Text(
+              '• Shuttle services are free for campus loops; cabs are chargeable.',
+            ),
             const SizedBox(height: 4),
-            const Text('• For accessibility assistance, mention it in the notes section.'),
+            const Text(
+              '• For accessibility assistance, mention it in the notes section.',
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDriverVerificationSection(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (_driverQrCode == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(context, 'Driver verification'),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _startDriverQrScan,
+            icon: const Icon(Icons.qr_code_scanner_outlined),
+            label: const Text('Scan driver QR'),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Use the driver’s QR to confirm their identity or pickup location before boarding.',
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle(context, 'Driver verification'),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceVariant,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.verified_outlined, color: theme.colorScheme.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Driver QR confirmed',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _driverQrCode!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'If the driver’s location changes, rescan to refresh the details.',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Remove',
+                onPressed: () => setState(() => _driverQrCode = null),
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: _startDriverQrScan,
+          icon: const Icon(Icons.qr_code_scanner_outlined),
+          label: const Text('Rescan driver QR'),
+        ),
+      ],
     );
   }
 
@@ -270,36 +296,6 @@ class _RideBookScreenState extends State<RideBookScreen> {
     );
   }
 
-  Future<void> _selectDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? now,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 60)),
-    );
-
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
-
-  Future<void> _selectTime() async {
-    final now = TimeOfDay.now();
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime ?? now,
-    );
-
-    if (picked != null) {
-      setState(() {
-        _selectedTime = picked;
-      });
-    }
-  }
-
   Future<void> _submitBooking() async {
     final messenger = ScaffoldMessenger.of(context);
 
@@ -307,15 +303,6 @@ class _RideBookScreenState extends State<RideBookScreen> {
       messenger.showSnackBar(
         const SnackBar(
           content: Text('Please fix the highlighted fields before submitting.'),
-        ),
-      );
-      return;
-    }
-
-    if (_selectedDate == null || _selectedTime == null) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Select both a pickup date and time.'),
         ),
       );
       return;
@@ -331,81 +318,22 @@ class _RideBookScreenState extends State<RideBookScreen> {
       return;
     }
 
-    final selectedDate = _selectedDate!;
-    final selectedTime = _selectedTime!;
-    final selectedRideType = _selectedRideType;
-    final formattedDate = MaterialLocalizations.of(context).formatMediumDate(selectedDate);
-    final formattedTime = MaterialLocalizations.of(context).formatTimeOfDay(
-      selectedTime,
-      alwaysUse24HourFormat: false,
-    );
+    final driverCode = _driverQrCode;
 
     setState(() {
       _isSubmitting = false;
-      _selectedDate = null;
-      _selectedTime = null;
-      _selectedRideType = _rideTypes.first;
+      _driverQrCode = null;
     });
 
     _pickupController.clear();
     _dropController.clear();
-    _notesController.clear();
+    final confirmationMessage = StringBuffer('Ride request sent successfully.');
+    if (driverCode != null) {
+      confirmationMessage.write(' Driver QR: $driverCode.');
+    }
 
     messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          'Ride request sent for $selectedRideType on $formattedDate at $formattedTime.',
-        ),
-      ),
-    );
-  }
-}
-
-class _DateTimePickerButton extends StatelessWidget {
-  const _DateTimePickerButton({
-    required this.label,
-    required this.valueText,
-    required this.isSet,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  final String label;
-  final String valueText;
-  final bool isSet;
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    final textStyle = isSet
-        ? theme.textTheme.titleMedium
-        : theme.textTheme.titleMedium?.copyWith(color: theme.hintColor);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: theme.textTheme.labelLarge),
-        const SizedBox(height: 8),
-        OutlinedButton(
-          style: OutlinedButton.styleFrom(
-            alignment: Alignment.centerLeft,
-            minimumSize: const Size.fromHeight(48),
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          ),
-          onPressed: onPressed,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Icon(icon),
-              const SizedBox(width: 12),
-              Expanded(child: Text(valueText, style: textStyle)),
-            ],
-          ),
-        ),
-      ],
+      SnackBar(content: Text(confirmationMessage.toString())),
     );
   }
 }
@@ -444,7 +372,9 @@ class _UpcomingRidesList extends StatelessWidget {
       children: [
         Text(
           'Upcoming rides',
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 12),
         ...upcomingRides.map(
@@ -469,7 +399,8 @@ class _UpcomingRidesList extends StatelessWidget {
               trailing: IconButton(
                 icon: const Icon(Icons.open_in_new),
                 tooltip: 'View details',
-                onPressed: () => _showSnack(context, 'Ride details coming soon.'),
+                onPressed: () =>
+                    _showSnack(context, 'Ride details coming soon.'),
               ),
             ),
           ),
@@ -479,7 +410,9 @@ class _UpcomingRidesList extends StatelessWidget {
   }
 
   static void _showSnack(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 

@@ -4,9 +4,10 @@
 @import './components/dashboard-overview.css';
 @import './components/user-management.css';
 @import './components/driver-dashboard.css';
-@import './components/ride-location-dashboard.css';
 @import './components/ride-bills.css';
 @import './components/table.css';
+@import './components/loading.css';
+@import './components/settings.css';
 @import './modals/modals.css';
 @import './forms/forms.css';
 @import './utils/utilities.css';

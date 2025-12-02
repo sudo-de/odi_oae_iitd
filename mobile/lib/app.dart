@@ -78,23 +78,51 @@ class _IITDAppState extends State<IITDApp> {
   @override
   Widget build(BuildContext context) {
     final lightTheme = ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo, brightness: Brightness.light),
-      brightness: Brightness.light,
+      colorScheme: const ColorScheme.dark(
+        brightness: Brightness.dark,
+        primary: Colors.white,
+        onPrimary: Colors.black,
+        secondary: Colors.white,
+        onSecondary: Colors.black,
+        surface: Color(0xFF000000),
+        onSurface: Colors.white,
+        background: Color(0xFF000000),
+        onBackground: Colors.white,
+        error: Colors.red,
+        onError: Colors.white,
+      ),
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: Colors.black,
+      cardColor: const Color(0xFF111111),
       useMaterial3: true,
     );
 
     final darkTheme = ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo, brightness: Brightness.dark),
+      colorScheme: const ColorScheme.dark(
+        brightness: Brightness.dark,
+        primary: Colors.white,
+        onPrimary: Colors.black,
+        secondary: Colors.white,
+        onSecondary: Colors.black,
+        surface: Color(0xFF000000),
+        onSurface: Colors.white,
+        background: Color(0xFF000000),
+        onBackground: Colors.white,
+        error: Colors.red,
+        onError: Colors.white,
+      ),
       brightness: Brightness.dark,
+      scaffoldBackgroundColor: Colors.black,
+      cardColor: const Color(0xFF111111),
       useMaterial3: true,
     );
 
     return MaterialApp(
       title: 'IITD Mobile',
       debugShowCheckedModeBanner: false,
-      theme: lightTheme,
+      theme: darkTheme,
       darkTheme: darkTheme,
-      themeMode: _themeMode,
+      themeMode: ThemeMode.dark,
       home: _isBootstrapping
           ? const _SplashScreen()
           : _currentUser == null

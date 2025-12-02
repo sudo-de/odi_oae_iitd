@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, memo } from 'react';
+import React, { useCallback, useMemo, memo, useState, useRef, useEffect } from 'react';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -14,8 +14,7 @@ interface SidebarProps {
 const NAV_ITEMS = [
   { id: 'overview', icon: '📊', label: 'Overview' },
   { id: 'users', icon: '👥', label: 'User Management' },
-  { id: 'driver', icon: '🚗', label: 'Driver Dashboard' },
-  { id: 'driver-ride-location', icon: '📍', label: 'Ride Location' },
+  { id: 'driver', icon: '🚗', label: 'Driver & Ride Location' },
   { id: 'ride-bills', icon: '🧾', label: 'Ride Bills' },
 ] as const;
 
@@ -51,6 +50,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse, 
   mobileOpen = false 
 }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const handleToggleClick = useCallback(() => {
     onToggleCollapse();
   }, [onToggleCollapse]);
@@ -63,7 +65,25 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleTabChange = useCallback((tab: string) => {
     onTabChange(tab);
+    setMenuOpen(false);
   }, [onTabChange]);
+
+  const toggleMenu = useCallback(() => {
+    setMenuOpen(prev => !prev);
+  }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   const sidebarClasses = useMemo(() => 
     ['sidebar', isCollapsed ? 'collapsed' : 'expanded', mobileOpen ? 'mobile-open' : '']
@@ -122,43 +142,70 @@ const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </nav>
 
-      {/* Footer - User Profile */}
-      <div className="sidebar-footer">
-        {/* User Info */}
-        <div className="user-profile">
+      {/* Footer - User Profile with Popup Menu */}
+      <div className="sidebar-footer" ref={menuRef}>
+        <button 
+          className={`user-menu-trigger ${menuOpen ? 'active' : ''}`}
+          onClick={toggleMenu}
+          aria-expanded={menuOpen}
+          aria-haspopup="true"
+        >
           <div className="user-avatar" title={user.name}>
             <span className="avatar-initial">{userInitial}</span>
             <span className="avatar-status" aria-label="Online"></span>
           </div>
           {!isCollapsed && (
-            <div className="user-details">
-              <div className="user-name">{user.name}</div>
-              <div className="user-role">{user.role}</div>
-            </div>
+            <>
+              <div className="user-details">
+                <div className="user-name">{user.name}</div>
+                <div className="user-role">{user.role}</div>
+              </div>
+              <span className="menu-arrow">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </span>
+            </>
           )}
-        </div>
+        </button>
 
-        {/* Footer Actions */}
-        <div className="footer-actions">
-          <button 
-            className={`footer-action-btn ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => handleTabChange('settings')}
-            title={isCollapsed ? 'Settings' : ''}
-            aria-label="Settings"
-          >
-            <span className="action-icon">⚙️</span>
-            {!isCollapsed && <span className="action-text">Settings</span>}
-          </button>
-          <button 
-            className="footer-action-btn logout"
-            onClick={handleLogout}
-            title={isCollapsed ? 'Logout' : ''}
-            aria-label="Logout"
-          >
-            <span className="action-icon">🚪</span>
-            {!isCollapsed && <span className="action-text">Logout</span>}
-          </button>
-        </div>
+        {/* Popup Menu */}
+        {menuOpen && (
+          <div className="user-popup-menu">
+            <div className="popup-header">
+              <div className="popup-avatar">
+                <span>{userInitial}</span>
+              </div>
+              <div className="popup-user-info">
+                <div className="popup-name">{user.name}</div>
+                <div className="popup-role">@{user.role}</div>
+              </div>
+            </div>
+            <div className="popup-divider"></div>
+        <button 
+              className={`popup-item ${activeTab === 'settings' ? 'active' : ''}`}
+              onClick={() => handleTabChange('settings')}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+              </svg>
+              <span>Settings</span>
+            </button>
+            <div className="popup-divider"></div>
+            <button 
+              className="popup-item logout"
+              onClick={handleLogout}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span>Log out</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

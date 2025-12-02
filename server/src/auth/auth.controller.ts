@@ -52,70 +52,51 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('notifications/settings')
-  async getNotificationSettings(@Request() req) {
+  @Get('devices')
+  async getDevices(@Request() req) {
     try {
-      const userId = req.user.id;
-      console.log('Getting notification settings for user:', userId);
-      const user = await this.authService.findUserById(userId);
-      const settings = user?.notificationSettings || {
-        login: true,
-        backup: true,
-        registration: true,
-        device: false
-      };
-      console.log('Notification settings:', settings);
-      return { settings };
-    } catch (error) {
-      console.error('Error getting notification settings:', error);
-      throw error;
-    }
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('notifications/settings')
-  async updateNotificationSettings(@Request() req, @Body() body: {
-    login?: boolean;
-    backup?: boolean;
-    registration?: boolean;
-    device?: boolean;
-  }) {
-    try {
-      console.log('updateNotificationSettings called, req.user:', req.user);
       const userId = req.user?.id;
+      console.log('Getting devices for user:', userId);
 
       if (!userId) {
-        console.error('No user ID found in request');
         throw new Error('User not authenticated');
       }
 
-      // Get current settings first
-      const user = await this.authService.findUserById(userId);
-      const currentSettings = user?.notificationSettings || {
-        login: true,
-        backup: true,
-        registration: true,
-        device: false
+      // For now, return mock device data
+      // In a real implementation, you'd store device sessions in the database
+      const currentDevice = {
+        userAgent: req.headers['user-agent'] || 'Unknown',
+        ip: req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || 'Unknown',
+        location: 'Unknown', // Would need geolocation service
+        lastActive: new Date().toISOString(),
+        current: true,
       };
 
-      // Merge with updates
-      const updatedSettings = {
-        ...currentSettings,
-        ...body
-      };
+      // Mock additional devices for demonstration
+      const mockDevices = [
+        currentDevice,
+        {
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          ip: '192.168.1.100',
+          location: 'New Delhi, India',
+          lastActive: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+          current: false,
+        },
+        {
+          userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X)',
+          ip: '10.0.0.50',
+          location: 'Mumbai, India',
+          lastActive: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+          current: false,
+        },
+      ];
 
-      console.log('Updating notification settings for user:', userId, 'to:', updatedSettings);
-
-      const updatedUser = await this.authService.updateUser(userId, { notificationSettings: updatedSettings });
-      console.log('User updated successfully:', !!updatedUser);
-
-      return { success: true, settings: updatedSettings };
+      return { devices: mockDevices };
     } catch (error) {
-      console.error('Error updating notification settings:', error);
+      console.error('Error getting devices:', error);
       throw error;
     }
   }
-
 
 }
 

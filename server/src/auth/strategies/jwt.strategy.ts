@@ -14,10 +14,29 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    const user = await this.usersService.findByEmail(payload.email);
-    if (!user) {
+    console.log('JWT Strategy validate called with payload:', payload);
+
+    if (!payload || !payload.email) {
+      console.log('JWT payload missing email');
       throw new UnauthorizedException();
     }
-    return user;
+
+    const user = await this.usersService.findByEmail(payload.email);
+    console.log('User found by email:', !!user);
+
+    if (!user) {
+      console.log('User not found for email:', payload.email);
+      throw new UnauthorizedException();
+    }
+
+    // Add id property from MongoDB _id (cast to any to access runtime properties)
+    const userDoc = user as any;
+    const userObj = {
+      ...user,
+      id: userDoc._id?.toString() || userDoc.id,
+    };
+
+    console.log('Returning user object with id:', userObj.id);
+    return userObj;
   }
 }

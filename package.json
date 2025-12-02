@@ -4,15 +4,29 @@
   "description": "Full-stack application with React client and NestJS server",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\" \"npm run create-user\"",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "dev:client": "cd client && npm run dev",
     "dev:server": "cd server && npm run start:dev",
-    "create-user": "cd server && npm run create-user",
+    "sync-driver-qr": "cd server && npm run sync-driver-qr",
+    "auto-sync-ride-bills": "cd server && npm run auto-sync-ride-bills",
+    "migrate-database": "cd server && npm run migrate-database",
     "build": "npm run build:client && npm run build:server",
     "build:client": "cd client && npm run build",
     "build:server": "cd server && npm run build",
-    "start": "cd server && npm run start:prod",
-    "install:all": "npm install && cd client && npm install && cd ../server && npm install"
+    "start": "npm run build:client && cd server && npm run start:prod",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "test": "cd client && npm test",
+    "test:headed": "cd client && npm run test:headed",
+    "test:ui": "cd client && npm run test:ui",
+    "test:debug": "cd client && npm run test:debug",
+    "test:report": "cd client && npm run test:report",
+    "test:server": "cd server && npm test",
+    "test:server:unit": "cd server && npm run test:unit",
+    "test:server:integration": "cd server && npm run test:integration",
+    "test:server:e2e": "cd server && npm run test:e2e",
+    "test:server:contract": "cd server && npm run test:contract",
+    "test:server:load": "cd server && npm run test:load",
+    "test:server:coverage": "cd server && npm run test:coverage"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

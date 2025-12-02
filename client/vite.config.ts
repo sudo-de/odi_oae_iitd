@@ -1,30 +1,18 @@
 import { defineConfig, type ViteDevServer, type PreviewServer } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Custom plugin to suppress all localhost URL display
+// Custom plugin to suppress localhost URL display
 const suppressLocalhostUrl = () => {
   return {
     name: 'suppress-localhost-url',
     configureServer(server: ViteDevServer) {
-      // Suppress URL printing
       server.printUrls = () => {
-        // Completely suppress URL display
-      }
-      
-      // Also intercept console.log to filter out localhost URLs
-      const originalLog = console.log
-      console.log = (...args: any[]) => {
-        const message = args.join(' ')
-        // Filter out any localhost URLs
-        if (!message.includes('localhost:') && !message.includes('http://') && !message.includes('Local:')) {
-          originalLog(...args)
-        }
+        // Suppress the URL printing
       }
     },
     configurePreviewServer(server: PreviewServer) {
-      // Suppress URL printing
       server.printUrls = () => {
-        // Completely suppress URL display
+        // Suppress the URL printing
       }
     },
   }

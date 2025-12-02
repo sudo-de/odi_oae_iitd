@@ -95,7 +95,6 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
 - **npm** or **yarn**
 - **MongoDB** (local installation or cloud instance)
 - **Git** (for cloning the repository)
-- **Docker** (optional, for containerized deployment)
 
 ### Database Setup
 
@@ -127,9 +126,7 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
 
 2. **Configure environment variables**:
 
-   **⚠️ For Production/Staging**: Use **GitHub Environments** (see [.github/ENVIRONMENTS.md](.github/ENVIRONMENTS.md))
-   
-   **For Local Development**: Create a `.env` file in `/server` directory (never commit this file):
+   **Server Environment** (`.env` in `/server` directory):
    ```env
    # Database
    MONGODB_URI=mongodb://localhost:27017/iitd-db
@@ -155,11 +152,6 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
    - Enable 2-Factor Authentication
    - Generate an App Password for "Mail"
    - Use the 16-character password (no spaces) as `SMTP_PASS`
-
-   **Important**: 
-   - `.env` files are in `.gitignore` and should **NEVER** be committed
-   - For CI/CD deployments, configure variables in GitHub Environments
-   - Never create `.env.example` files
 
 ### Installation
 
@@ -235,145 +227,6 @@ npm run build
 # Start production server
 npm start
 ```
-
-## 🐳 Docker Deployment
-
-### Quick Start with Docker
-
-Start all services with Docker Compose:
-
-```bash
-# Start all services (MongoDB, Server, Client)
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-```
-
-### Services
-- **MongoDB**: `localhost:27017`
-- **Server**: `http://localhost:3000`
-- **Client**: `http://localhost`
-
-### Environment Variables
-
-**⚠️ For Production/Staging**: Use **GitHub Environments** (see [.github/ENVIRONMENTS.md](.github/ENVIRONMENTS.md))
-
-**For Local Development**: Create a `.env` file in the root directory (never commit this file):
-
-```env
-NODE_ENV=development
-PORT=3000
-MONGODB_URI=mongodb://mongodb:27017/iitd-db
-JWT_SECRET=your-secret-key-change-in-production
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-```
-
-**Important**: 
-- `.env` files are in `.gitignore` and should **NEVER** be committed
-- For CI/CD, use GitHub Environments instead of `.env` files
-- Never create `.env.example` files
-
-For detailed Docker documentation, see [DOCKER.md](./DOCKER.md).
-
-## 🔄 CI/CD with GitHub Actions
-
-This project includes automated CI/CD pipelines using GitHub Actions.
-
-### Continuous Integration (CI)
-
-The CI workflow automatically:
-- ✅ Lints code
-- ✅ Builds applications
-- ✅ Runs tests (client and server)
-- ✅ Tests Docker image builds
-
-**Triggers:**
-- Push to `main` or `develop` branches
-- Pull requests to `main` or `develop`
-
-### Continuous Deployment (CD)
-
-The CD workflow automatically:
-- 🏗️ Builds Docker images
-- 📦 Pushes to GitHub Container Registry
-- 🚀 Deploys to staging/production environments
-- 🏥 Runs health checks
-
-**Environments:**
-- **Staging**: Auto-deploys on push to `main`
-- **Production**: Requires manual approval
-
-### Setup GitHub Environments
-
-1. Go to **Settings** → **Environments** in your GitHub repository
-2. Create `staging` and `production` environments
-3. Configure environment variables and secrets
-4. Set deployment protection rules
-
-For detailed setup instructions, see [.github/ENVIRONMENTS.md](.github/ENVIRONMENTS.md).
-
-### Manual Deployment
-
-Deploy using the deployment script:
-
-```bash
-# Deploy to staging
-./deploy.sh staging
-
-# Deploy to production
-./deploy.sh production
-```
-
-For workflow details, see [.github/workflows/README.md](.github/workflows/README.md).
-
-## ☸️ Kubernetes & GitOps
-
-This project includes complete Kubernetes and GitOps setup with Terraform and ArgoCD.
-
-### Kubernetes Deployment
-
-Deploy to Kubernetes using Kustomize:
-
-```bash
-# Staging
-kubectl apply -k k8s/overlays/staging
-
-# Production
-kubectl apply -k k8s/overlays/production
-```
-
-### Infrastructure as Code with Terraform
-
-Provision infrastructure using Terraform:
-
-```bash
-cd terraform
-terraform init
-terraform plan
-terraform apply
-```
-
-### GitOps with ArgoCD
-
-ArgoCD automatically syncs your Git repository to Kubernetes:
-
-1. Install ArgoCD (via Terraform or Helm)
-2. Create ArgoCD applications
-3. Push changes to Git
-4. ArgoCD automatically deploys
-
-For detailed guides, see:
-- [KUBERNETES.md](./KUBERNETES.md) - Kubernetes deployment guide
-- [TERRAFORM.md](./TERRAFORM.md) - Terraform infrastructure guide
-- [GITOPS.md](./GITOPS.md) - GitOps with ArgoCD guide
 
 ### First-Time Setup
 
@@ -664,13 +517,3 @@ For technical support or questions:
 - Check the [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed technical documentation
 - Review server logs for error details
 - Test API endpoints using the provided examples
-
-## 📚 Additional Documentation
-
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture details
-- [DOCKER.md](./DOCKER.md) - Docker setup and usage
-- [KUBERNETES.md](./KUBERNETES.md) - Kubernetes deployment guide
-- [TERRAFORM.md](./TERRAFORM.md) - Infrastructure as Code guide
-- [GITOPS.md](./GITOPS.md) - GitOps with ArgoCD guide
-- [INFRASTRUCTURE.md](./INFRASTRUCTURE.md) - Complete infrastructure overview
-- [CI_CD_SETUP.md](./CI_CD_SETUP.md) - CI/CD setup summary
