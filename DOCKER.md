@@ -50,7 +50,9 @@ This guide explains how to use Docker and Docker Compose for local development a
 
 ## Environment Variables
 
-Create a `.env` file in the root directory:
+### For Local Development
+
+Create a `.env` file in the root directory (for local development only):
 
 ```env
 # Server Configuration
@@ -66,6 +68,11 @@ SMTP_SECURE=false
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 ```
+
+**⚠️ Important**: 
+- `.env` files are in `.gitignore` and should **NEVER** be committed
+- For production/staging, use **GitHub Environments** (see [.github/ENVIRONMENTS.md](.github/ENVIRONMENTS.md))
+- Never create `.env.example` files - use GitHub Environments instead
 
 ## Building Images
 

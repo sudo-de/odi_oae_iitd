@@ -127,7 +127,9 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
 
 2. **Configure environment variables**:
 
-   **Server Environment** (`.env` in `/server` directory):
+   **⚠️ For Production/Staging**: Use **GitHub Environments** (see [.github/ENVIRONMENTS.md](.github/ENVIRONMENTS.md))
+   
+   **For Local Development**: Create a `.env` file in `/server` directory (never commit this file):
    ```env
    # Database
    MONGODB_URI=mongodb://localhost:27017/iitd-db
@@ -153,6 +155,11 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
    - Enable 2-Factor Authentication
    - Generate an App Password for "Mail"
    - Use the 16-character password (no spaces) as `SMTP_PASS`
+
+   **Important**: 
+   - `.env` files are in `.gitignore` and should **NEVER** be committed
+   - For CI/CD deployments, configure variables in GitHub Environments
+   - Never create `.env.example` files
 
 ### Installation
 
@@ -253,7 +260,9 @@ docker-compose down
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+**⚠️ For Production/Staging**: Use **GitHub Environments** (see [.github/ENVIRONMENTS.md](.github/ENVIRONMENTS.md))
+
+**For Local Development**: Create a `.env` file in the root directory (never commit this file):
 
 ```env
 NODE_ENV=development
@@ -266,6 +275,11 @@ SMTP_SECURE=false
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 ```
+
+**Important**: 
+- `.env` files are in `.gitignore` and should **NEVER** be committed
+- For CI/CD, use GitHub Environments instead of `.env` files
+- Never create `.env.example` files
 
 For detailed Docker documentation, see [DOCKER.md](./DOCKER.md).
 

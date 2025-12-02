@@ -2,13 +2,25 @@
 
 This guide explains how to configure GitHub Environments for your CI/CD pipeline without using cloud services.
 
+## ⚠️ Important: Use GitHub Environments, Not .env Files
+
+**DO NOT commit `.env` or `.env.example` files to Git!**
+
+- ✅ **Use GitHub Environments** for all secrets and environment variables
+- ✅ **Use `.env` files locally** for development only (already in `.gitignore`)
+- ❌ **Never commit** `.env` files to the repository
+- ❌ **Never create** `.env.example` files (use this documentation instead)
+
+All environment variables should be stored in GitHub Environments, not in files.
+
 ## Overview
 
 GitHub Environments allow you to:
-- Configure environment-specific secrets and variables
+- Configure environment-specific secrets and variables securely
 - Set deployment protection rules
 - Track deployment history
 - Control who can deploy to which environment
+- Keep secrets out of your codebase
 
 ## Setting Up Environments
 
