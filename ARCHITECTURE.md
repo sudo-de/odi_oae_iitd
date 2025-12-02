@@ -24,10 +24,16 @@
 │                                                               │
 │  ┌─────────────────────────────────────────────────────────┐  │
 │  │              NestJS REST API Server                     │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │  │
-│  │  │   Auth       │  │    Users     │  │      App     │   │  │
-│  │  │  Module      │  │   Module     │  │    Module    │   │  │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘   │  │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐    │  │
+│  │  │   Auth       │  │    Users     │  │      App    │    │  │
+│  │  │  Module      │  │   Module     │  │    Module   │    │  │
+│  │  └──────┬───────┘  └──────┬───────┘  └──────┬──────┘    │  │
+│  │         │                 │                 │           │  │
+│  │  ┌──────▼──────┐    ┌─────▼──────┐    ┌─────▼──────┐    │  │
+│  │  │  Email      │    │ Data Mgmt  │    │  Email     │    │  │
+│  │  │  Service    │    │  Service   │    │  Backup    │    │  │
+│  │  │             │    │            │    │  Notif.    │    │  │
+│  │  └─────────────┘    └────────────┘    └────────────┘    │  │
 │  │                                                         │  │
 │  │  ┌──────────────────────────────────────────────────┐   │  │
 │  │  │         Middleware Layer                         │   │  │
@@ -47,7 +53,7 @@
 │  ┌─────────────────────────────────────────────────────────┐  │
 │  │              MongoDB Database                           │  │
 │  │                                                         │  │
-│  │  ┌──────────────┐  ┌─────────****─────┐  ┌──────────────┐   │  │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │  │
 │  │  │   Users      │  │   Files      │  │   Sessions   │   │  │
 │  │  │ Collection   │  │  (GridFS)    │  │  (Optional)  │   │  │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘   │  │
@@ -87,6 +93,7 @@
 - **File Upload**: Multer
 - **Validation**: Class Validator
 - **Configuration**: @nestjs/config
+- **Email Service**: Nodemailer (SMTP)
 
 ### Database
 - **Primary DB**: MongoDB
@@ -94,11 +101,13 @@
 - **Connection**: MongooseModule
 
 ### Additional Tools
-- **QR Code Generation**: 
+- **QR Code Generation**:
   - Server: qrcode (Node.js)
   - Mobile: qr_flutter (Flutter)
+- **Email Service**: nodemailer (SMTP with Gmail)
 - **Password Hashing**: bcrypt (Server)
 - **File Processing**: fs, path (Server)
+- **Backup System**: Automatic JSON exports with email notifications
 - **Mobile Storage**: shared_preferences (Flutter)
 - **Mobile File Picker**: image_picker (Flutter)
 
@@ -159,6 +168,12 @@ web_app/                             # Web Application (React + NestJS)
 │   │   │   │   └── jwt-auth.guard.ts
 │   │   │   └── strategies/          # Passport Strategies
 │   │   │       └── jwt.strategy.ts
+│   │   ├── email/                   # Email Service Module
+│   │   │   └── email.module.ts
+│   │   ├── data-management/         # Data Management Module
+│   │   │   ├── data-management.controller.ts
+│   │   │   ├── data-management.service.ts
+│   │   │   └── data-management.module.ts
 │   │   ├── users/                   # Users Module
 │   │   │   ├── users.controller.ts
 │   │   │   ├── users.service.ts
@@ -171,6 +186,8 @@ web_app/                             # Web Application (React + NestJS)
 │   │   ├── app.module.ts            # Root Module
 │   │   ├── app.controller.ts
 │   │   ├── app.service.ts
+│   │   ├── services/                # Shared Services
+│   │   │   └── email.service.ts     # Email Service (SMTP)
 │   │   └── main.ts                  # Application Entry
 │   ├── uploads/                     # File Storage
 │   ├── package.json
@@ -287,6 +304,32 @@ mobile/                              # Flutter Mobile App (iOS & Android)
            └─> Response: { qrCode: "data:image/png;base64,..." }
 ```
 
+### Backup System Flow
+```
+1. Manual Backup
+   └─> POST /data-management/backup
+       └─> DataManagementController.createBackup()
+           └─> DataManagementService.createBackup()
+               └─> Query all collections (users, locations, bills)
+               └─> Create backup JSON with metadata
+               └─> Save to server/backups/ directory
+               └─> Send email notifications to admin users
+           └─> EmailService.sendBackupNotification()
+               └─> Generate HTML email with backup stats
+               └─> SMTP send to all admin users
+
+2. Scheduled Backup
+   └─> POST /data-management/backup/schedule
+       └─> Same flow as manual backup
+           └─> Triggered by external scheduler (cron)
+
+3. Backup Email Notifications
+   └─> Check backup settings: emailNotifications = true
+       └─> Find all users with role = 'admin'
+       └─> Send personalized email to each admin
+       └─> Email includes: backup stats, file info, timestamp
+```
+
 ## 🗄️ Database Schema
 
 ### User Collection
@@ -372,6 +415,7 @@ POST   /auth/login              # Login user
 POST   /auth/forgot-password     # Request password reset
 POST   /auth/reset-password     # Reset password
 GET    /auth/profile            # Get current user (JWT required)
+GET    /auth/devices            # Get device information (JWT required)
 ```
 
 #### User Management Endpoints
@@ -391,6 +435,18 @@ GET    /users/stats/overview     # Get user statistics (JWT required)
 ```
 POST   /users/:id/generate-qr           # Generate QR for driver (JWT required)
 POST   /users/drivers/generate-qr-codes # Generate QR for all drivers (JWT required)
+```
+
+#### Data Management Endpoints
+```
+GET    /data-management/stats           # Get data statistics (JWT required)
+POST   /data-management/backup          # Create manual backup (JWT required)
+GET    /data-management/backups         # Get backup history (JWT required)
+POST   /data-management/backup/settings # Update backup settings (JWT required)
+GET    /data-management/backup/settings # Get backup settings (JWT required)
+POST   /data-management/export          # Export data (JWT required)
+POST   /data-management/import          # Import data (JWT required)
+POST   /data-management/cache/clear     # Clear system cache (JWT required)
 ```
 
 #### Health & Info Endpoints
@@ -555,7 +611,9 @@ Widget
     ConfigModule,        // Environment configuration
     MongooseModule,      // MongoDB connection
     UsersModule,         // User management
-    AuthModule          // Authentication
+    AuthModule,          // Authentication
+    EmailModule,         // Email service
+    DataManagementModule // Backup & data management
   ]
 })
 ```
@@ -587,6 +645,34 @@ Widget
   ],
   exports: [
     UsersService         // Export for AuthModule
+  ]
+})
+```
+
+### EmailModule
+```typescript
+@Module({
+  providers: [
+    EmailService         // SMTP email service
+  ],
+  exports: [
+    EmailService         // Export for other modules
+  ]
+})
+```
+
+### DataManagementModule
+```typescript
+@Module({
+  imports: [
+    MongooseModule,      // Database access
+    EmailModule          // Email notifications
+  ],
+  controllers: [
+    DataManagementController // Backup & data endpoints
+  ],
+  providers: [
+    DataManagementService // Backup business logic
   ]
 })
 ```
@@ -737,6 +823,13 @@ PORT=3000
 MONGODB_URI=mongodb://localhost:27017/iitd-db
 JWT_SECRET=your-secret-key-here
 JWT_EXPIRES_IN=1d
+
+# Email Configuration (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=IITD System <your-email@gmail.com>
 ```
 
 ### CORS Configuration

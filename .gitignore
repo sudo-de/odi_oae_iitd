@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Build outputs
+dist/
+build/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# Docker
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Uploads (keep structure, ignore files)
+uploads/*
+!uploads/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
