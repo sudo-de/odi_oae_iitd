@@ -20,6 +20,13 @@ const suppressLocalhostUrl = () => {
 
 // https://vite.dev/config/
 export default defineConfig({
+
+  // ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+  // MOST IMPORTANT FOR GITHUB PAGES
+  base: '/oae_iitd_client/',           // ←←←← Matches deployment repo: sudo-de/oae_iitd_client
+  // If your repo is https://github.com/sudo-de/oae_iitd_client → use '/oae_iitd_client/'
+  // If it's a user/org page (username.github.io) → use '/' only
+  // ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
   plugins: [react(), suppressLocalhostUrl()],
   resolve: {
     preserveSymlinks: true,
