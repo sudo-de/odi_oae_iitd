@@ -1,24 +1,49 @@
 # IITD Transport Management System
 
-A comprehensive full-stack application for managing IIT Delhi transport operations, built with React, NestJS, and MongoDB.
+A comprehensive full-stack application for managing IIT Delhi transport operations, built with React (Web), React Native (Mobile), NestJS, and MongoDB.
+
+## 📋 Table of Contents
+
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+- [Available Scripts](#-available-scripts)
+- [API Endpoints](#-api-endpoints)
+- [Technology Stack](#️-technology-stack)
+- [Usage Examples](#-usage-examples)
+- [Troubleshooting](#-troubleshooting)
+- [Contributing](#-contributing)
 
 ## 🚀 Features
 
 ### 👥 User Management
-- **Multi-role System**: Admin, Driver, and User roles
+- **Multi-role System**: Admin, Staff, Driver, and Student roles
+- **Role-based Access Control**: 
+  - **Web App**: Admin and Staff only
+  - **Mobile App**: Student and Driver only
 - **Bulk Operations**: Import/export users, bulk status updates
-- **Profile Management**: User profiles with photos and disability documents
+- **Profile Management**: User profiles with photos, entry numbers, programmes, departments, hostels
+- **Verification System**: Driver verification with expiry dates and status tracking
 - **QR Code Generation**: Automated QR codes for drivers
+
+### 🚗 Ride Management
+- **Ride Locations**: Predefined routes with from/to locations and fare pricing
+- **Ride Booking**: Students can book rides by selecting from and to locations
+- **Ride Bills**: Track ride transactions with status (completed, pending, cancelled)
+- **Bill Statistics**: Revenue tracking, average fare, min/max fare analysis
+- **Bill History**: View all ride bills with filtering and status indicators
 
 ### 🔐 Security & Authentication
 - **JWT Authentication**: Secure token-based authentication
 - **Device Tracking**: Monitor active device sessions
 - **Password Security**: bcrypt hashing with validation
 - **Role-based Access**: Granular permissions system
+- **Client Type Validation**: Enforces role restrictions based on client type (web/mobile)
 
 ### 💾 Data Management
 - **Automatic Backups**: Scheduled JSON exports with email notifications
-- **Data Export/Import**: Bulk data operations
+- **Data Export/Import**: Bulk data operations for users, ride locations, and bills
 - **Cache Management**: System performance optimization
 - **Statistics Dashboard**: Real-time data insights
 
@@ -26,6 +51,15 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
 - **SMTP Integration**: Gmail SMTP with app password support
 - **Backup Alerts**: Automated email notifications for completed backups
 - **Admin Communications**: Targeted notifications to administrators
+
+### 📱 Mobile App Features
+- **Cross-platform**: iOS and Android support via Expo
+- **Theme Support**: Light/Dark mode with persistent preferences
+- **Profile Management**: View and manage user profiles
+- **QR Code Display**: Drivers can view and generate QR codes
+- **Ride Booking**: Students can book rides with location selection
+- **Bill Viewing**: View ride bills with status indicators
+- **Settings**: Profile, password, theme, notifications, and more
 
 ### 📱 Device Management
 - **Session Monitoring**: Track active user devices and locations
@@ -40,26 +74,51 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
 │   :5173         │    │   :3000         │    │   :27017        │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
-         ▼                       ▼                       ▼
+         │                       │                       │
+┌─────────────────┐              │                       │
+│  React Native   │              │                       │
+│  (Expo)         │◄─────────────┘                       │
+│  Mobile App     │                                       │
+└─────────────────┘                                       │
+         │                                                │
+         ▼                                                ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  File Storage   │    │  Email Service  │    │   User Data     │
-│  (Local/Cloud)  │    │   (SMTP)        │    │   Collections   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+│  File Storage   │    │  Email Service  │    │   Collections   │
+│  (Local/Cloud)  │    │   (SMTP)        │    │   - Users       │
+└─────────────────┘    └─────────────────┘    │   - RideLocations│
+                                               │   - RideBills   │
+                                               └─────────────────┘
 ```
 
 ## 📁 Project Structure
 
 ```
-├── client/                      # React Web Frontend
+├── client/                      # React Web Frontend (Admin/Staff)
 │   ├── src/
 │   │   ├── components/
-│   │   │   └── AdminDashboard/  # Main dashboard interface
-│   │   │       ├── components/   # UI components
-│   │   │       │   ├── Settings.tsx     # System settings
-│   │   │       │   ├── UserManagement.tsx # User CRUD
-│   │   │       │   └── ...
-│   │   │       └── styles/       # CSS styles
+│   │   │   ├── AdminDashboard/  # Main dashboard interface
+│   │   │   │   ├── components/   # UI components
+│   │   │   │   │   ├── Settings.tsx     # System settings
+│   │   │   │   │   ├── UserManagement.tsx # User CRUD
+│   │   │   │   │   └── ...
+│   │   │   │   └── styles/       # CSS styles
+│   │   │   ├── Login/            # Login component
+│   │   │   └── Sidebar.tsx       # Navigation sidebar
 │   │   └── main.tsx
+│   └── package.json
+│
+├── mobile/                      # React Native Mobile App (Student/Driver)
+│   ├── components/
+│   │   ├── Login.tsx             # Mobile login
+│   │   ├── Dashboard.tsx        # Main dashboard with tabs
+│   │   └── Settings.tsx          # Settings screen
+│   ├── context/
+│   │   └── ThemeContext.tsx      # Theme management
+│   ├── services/
+│   │   └── api.ts                # API client
+│   ├── assets/
+│   │   └── logo.png              # App logo
+│   ├── App.tsx                   # Root component
 │   └── package.json
 │
 ├── server/                      # NestJS Backend
@@ -72,6 +131,14 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
 │   │   │   ├── users.controller.ts
 │   │   │   ├── users.service.ts
 │   │   │   └── users.module.ts
+│   │   ├── ride-locations/      # Ride location routes
+│   │   │   ├── ride-locations.controller.ts
+│   │   │   ├── ride-locations.service.ts
+│   │   │   └── dto/
+│   │   ├── ride-bills/          # Ride bill management
+│   │   │   ├── ride-bills.controller.ts
+│   │   │   ├── ride-bills.service.ts
+│   │   │   └── dto/
 │   │   ├── data-management/     # Backup & data management
 │   │   │   ├── data-management.controller.ts
 │   │   │   └── data-management.service.ts
@@ -80,9 +147,17 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
 │   │   ├── services/            # Shared services
 │   │   │   └── email.service.ts
 │   │   └── schemas/             # MongoDB schemas
-│   │       └── user.schema.ts
+│   │       ├── user.schema.ts
+│   │       ├── ride-location.schema.ts
+│   │       └── ride-bill.schema.ts
 │   ├── uploads/                 # File storage
 │   └── package.json
+│
+├── infra/                       # Infrastructure & Deployment
+│   ├── docker/                  # Docker configurations
+│   ├── k8s/                     # Kubernetes manifests
+│   ├── terraform/               # Infrastructure as Code
+│   └── argocd/                  # ArgoCD configurations
 │
 ├── ARCHITECTURE.md              # Detailed system architecture
 └── package.json                 # Root package manager
@@ -95,6 +170,7 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
 - **npm** or **yarn**
 - **MongoDB** (local installation or cloud instance)
 - **Git** (for cloning the repository)
+- **Expo CLI** (for mobile development): `npm install -g expo-cli`
 
 ### Database Setup
 
@@ -164,24 +240,25 @@ npm run install:all
 # Or install individually:
 cd client && npm install
 cd ../server && npm install
+cd ../mobile && npm install
 ```
 
 ### Development
 
-Run both client and server in development mode:
+Run all services in development mode:
 
 ```bash
 npm run dev
 ```
 
 This will start:
-- **React Client**: http://localhost:5173
+- **React Web Client**: http://localhost:5173 (Admin/Staff)
 - **NestJS Server**: http://localhost:3000
 - **MongoDB**: localhost:27017
 
 ### Running Individual Services
 
-#### Client Only
+#### Web Client Only
 ```bash
 npm run dev:client
 # Or: cd client && npm run dev
@@ -191,6 +268,15 @@ npm run dev:client
 ```bash
 npm run dev:server
 # Or: cd server && npm run dev
+```
+
+#### Mobile App Only
+```bash
+cd mobile && npm start
+# Or use Expo commands:
+npm run android    # Android emulator
+npm run ios        # iOS simulator
+npm run web        # Web browser
 ```
 
 ### Testing
@@ -231,10 +317,13 @@ npm start
 ### First-Time Setup
 
 1. **Start the application** in development mode
-2. **Access the web interface** at http://localhost:5173
-3. **Create an admin user** through the registration process
-4. **Configure backup settings** in the Settings page
-5. **Test email notifications** by creating a backup
+2. **Access the web interface** at http://localhost:5173 (Admin/Staff login)
+3. **Create admin/staff users** through the registration process
+4. **Create student/driver users** via the admin dashboard
+5. **Configure ride locations** with from/to routes and fares
+6. **Configure backup settings** in the Settings page
+7. **Test mobile app** by logging in with student/driver credentials
+8. **Test email notifications** by creating a backup
 
 ## 📜 Available Scripts
 
@@ -262,12 +351,16 @@ npm start
 
 ### Authentication
 ```
-POST   /auth/login              # User login
+POST   /auth/login              # User login (with clientType: 'web' or 'mobile')
 POST   /auth/forgot-password     # Request password reset
 POST   /auth/reset-password     # Reset password with token
 GET    /auth/profile            # Get current user profile (JWT)
 GET    /auth/devices            # Get device information (JWT)
 ```
+
+**Login Role Restrictions**:
+- **Web**: Only Admin and Staff roles allowed
+- **Mobile**: Only Student and Driver roles allowed
 
 ### User Management
 ```
@@ -286,6 +379,25 @@ GET    /users/stats/overview    # Get user statistics (JWT)
 ```
 POST   /users/:id/generate-qr           # Generate QR for driver (JWT)
 POST   /users/drivers/generate-qr-codes # Generate QR for all drivers (JWT)
+```
+
+### Ride Locations
+```
+GET    /ride-locations          # Get all ride locations (JWT)
+GET    /ride-locations/:id      # Get ride location by ID (JWT)
+POST   /ride-locations          # Create new ride location (JWT)
+PATCH  /ride-locations/:id      # Update ride location (JWT)
+DELETE /ride-locations/:id      # Delete ride location (JWT)
+```
+
+### Ride Bills
+```
+GET    /ride-bills              # Get all ride bills (JWT)
+GET    /ride-bills/stats        # Get ride bill statistics (JWT)
+GET    /ride-bills/:id          # Get ride bill by ID (JWT)
+POST   /ride-bills              # Create new ride bill (JWT)
+PATCH  /ride-bills/:id          # Update ride bill (JWT)
+DELETE /ride-bills/:id          # Delete ride bill (JWT)
 ```
 
 ### Data Management & Backup
@@ -309,7 +421,7 @@ GET    /app/info            # Application information
 
 ## 🛠️ Technology Stack
 
-### Frontend (React Web)
+### Frontend (React Web - Admin/Staff)
 - **Framework**: React 19 with Hooks
 - **Language**: TypeScript
 - **Build Tool**: Vite
@@ -318,6 +430,16 @@ GET    /app/info            # Application information
 - **State Management**: React useState/useEffect
 - **Code Quality**: ESLint
 - **UI Components**: Custom component library
+
+### Mobile App (React Native - Student/Driver)
+- **Framework**: React Native 0.81.5 with Expo ~54.0
+- **Language**: TypeScript
+- **Platform**: iOS, Android, Web
+- **State Management**: React Context API
+- **Storage**: AsyncStorage for token and theme persistence
+- **HTTP Client**: Axios with interceptors
+- **UI Components**: Custom components with theme support
+- **Features**: QR Code generation, Theme switching (Light/Dark)
 
 ### Backend (NestJS)
 - **Framework**: NestJS 11
@@ -333,6 +455,7 @@ GET    /app/info            # Application information
 ### Database & Storage
 - **Primary Database**: MongoDB
 - **ODM**: Mongoose
+- **Collections**: Users, RideLocations, RideBills
 - **File Storage**: Local filesystem (uploads/)
 - **GridFS**: Large file storage in MongoDB
 - **Backup Format**: JSON exports
@@ -349,6 +472,7 @@ GET    /app/info            # Application information
 - **CORS**: Configured for web/mobile
 - **Input Validation**: DTO-based validation
 - **File Security**: Type and size validation
+- **Role-based Access Control**: Client-type validation (web/mobile)
 
 ### Development Tools
 - **Version Control**: Git
@@ -362,6 +486,10 @@ GET    /app/info            # Application information
 - **Production Ready**: Environment-based configuration
 - **Deployment**: Docker-ready architecture
 - **Monitoring**: Health checks + logging
+- **Containerization**: Docker support
+- **Orchestration**: Kubernetes manifests
+- **IaC**: Terraform configurations
+- **GitOps**: ArgoCD for continuous deployment
 
 ### Testing & Quality Assurance
 - **E2E Testing**: Playwright framework (Client)
@@ -391,6 +519,73 @@ const response = await fetch('/users', {
   method: 'POST',
   headers: { Authorization: `Bearer ${token}` },
   body: formData
+});
+```
+
+### Login with Role-based Access
+```typescript
+// Web Client - Admin/Staff only
+const response = await fetch('/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'admin@iitd.ac.in',
+    password: 'password',
+    clientType: 'web'  // Required for web access
+  })
+});
+
+// Mobile App - Student/Driver only
+const response = await fetch('/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: 'student@iitd.ac.in',
+    password: 'password',
+    clientType: 'mobile'  // Required for mobile access
+  })
+});
+```
+
+### Creating a Ride Location
+```typescript
+// Create a new ride route
+const response = await fetch('/ride-locations', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    fromLocation: 'IIT Main Gate',
+    toLocation: 'IIT Hospital',
+    fare: 50
+  })
+});
+```
+
+### Booking a Ride (Student)
+```typescript
+// Create a ride bill
+const response = await fetch('/ride-bills', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    rideId: `RIDE-${Date.now()}`,
+    studentId: currentUser.id,
+    studentName: currentUser.name,
+    studentEntryNumber: currentUser.entryNumber,
+    driverId: selectedDriver.id,
+    driverName: selectedDriver.name,
+    location: `${fromLocation} → ${toLocation}`,
+    fare: selectedFare,
+    date: new Date().toISOString(),
+    time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+    status: 'pending'
+  })
 });
 ```
 
@@ -446,6 +641,19 @@ brew services start mongodb-community
 - Refresh the page to re-authenticate
 - Check JWT expiration time in `.env`
 
+**Mobile App Issues**
+- Ensure Expo CLI is installed: `npm install -g expo-cli`
+- Clear Expo cache: `expo start -c`
+- Reset Metro bundler: `npx react-native start --reset-cache`
+- Check that server is running and accessible from mobile device/emulator
+
+**Role-based Access Errors**
+- Verify `clientType` is included in login request ('web' or 'mobile')
+- Ensure user role matches client type:
+  - Web: Admin or Staff
+  - Mobile: Student or Driver
+- Check server logs for detailed error messages
+
 ### Environment Variables
 
 Create `.env` file in `/server` directory:
@@ -468,21 +676,39 @@ SMTP_PASS=your-16-char-app-password
 
 ## 📊 System Features
 
-### Dashboard Overview
-- **Real-time Statistics**: User counts, active sessions
+### Web Dashboard (Admin/Staff)
+- **Real-time Statistics**: User counts, active sessions, ride statistics
 - **System Health**: Database status, server uptime
-- **Quick Actions**: Create users, generate reports
+- **Quick Actions**: Create users, generate reports, manage ride locations
+- **User Management**: CRUD operations, bulk updates, role management
+- **Ride Management**: Create/edit ride locations, view ride bills
+- **Data Management**: Backups, exports, imports, cache management
+
+### Mobile Dashboard (Student/Driver)
+- **Profile Tab**: View profile information, verification status, expiry dates
+- **QR Code Tab** (Drivers): Display and generate QR codes
+- **Ride Tab** (Students): Book rides by selecting from/to locations
+- **Bills Tab**: View ride bills with status indicators
+- **Settings Tab**: Profile, password, theme, notifications, logout
+- **Theme Support**: Light/Dark mode with persistent preferences
 
 ### User Management
-- **Role-based Access**: Admin, Driver, User permissions
+- **Role-based Access**: Admin, Staff, Driver, Student permissions
 - **Bulk Operations**: Import/export, mass updates
-- **Profile Management**: Photos, documents, metadata
+- **Profile Management**: Photos, entry numbers, programmes, departments, hostels
+- **Verification System**: Driver verification with expiry tracking
 - **QR Code Integration**: Automated driver QR generation
+
+### Ride Management
+- **Location Routes**: Predefined from/to locations with fare pricing
+- **Ride Booking**: Students can book rides with location selection
+- **Bill Tracking**: Track ride transactions with status management
+- **Statistics**: Revenue tracking, fare analysis, ride counts
 
 ### Data Management
 - **Automated Backups**: Scheduled JSON exports
 - **Email Notifications**: Backup completion alerts
-- **Data Export/Import**: CSV/JSON operations
+- **Data Export/Import**: CSV/JSON operations for users, locations, and bills
 - **Cache Management**: Performance optimization
 
 ### Security Features
@@ -490,6 +716,7 @@ SMTP_PASS=your-16-char-app-password
 - **Secure Authentication**: JWT with bcrypt hashing
 - **Input Validation**: Comprehensive data validation
 - **File Security**: Type and size restrictions
+- **Client Type Validation**: Role restrictions based on client type
 
 ## 🤝 Contributing
 
@@ -506,6 +733,8 @@ SMTP_PASS=your-16-char-app-password
 - Add JSDoc comments for public methods
 - Test API endpoints with Postman/Insomnia
 - Update documentation for new features
+- Maintain role-based access control patterns
+- Follow mobile app design guidelines
 
 ## 📄 License
 
@@ -517,3 +746,8 @@ For technical support or questions:
 - Check the [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed technical documentation
 - Review server logs for error details
 - Test API endpoints using the provided examples
+- Check mobile app logs via Expo DevTools
+
+---
+
+**Built with ❤️ for IIT Delhi Transport Management**
