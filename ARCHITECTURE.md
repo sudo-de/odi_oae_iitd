@@ -8,7 +8,7 @@
 ├───────────────────────────────────────────────────────────────┤
 │                                                               │
 │     ┌──────────────┐  ┌──────────────┐  ┌───────────────┐     │
-│     │   React Web  │  │Flutter/React Native     │  │    │     │
+│     │   React Web  │  │ React Native │  │ React Native  │     │
 │     │   (Vite)     │  │    iOS App   │  │  Android App  │     │
 │     └──────┬───────┘  └───────┬──────┘  └────────┬──────┘     │
 │            │                  │                  │            │
@@ -75,13 +75,13 @@
 
 ### Frontend (Client)
 - **Web Framework**: React 19
-- **Mobile Framework**: Flutter (Dart)
-- **Language**: TypeScript (Web), Dart (Mobile)
-- **Build Tool**: Vite (Web), Flutter CLI (Mobile)
-- **HTTP Client**: Axios (Web), Dio (Mobile)
-- **State Management**: React Hooks (Web), Provider/Riverpod (Mobile)
-- **Styling**: CSS Modules (Web), Material Design/Cupertino (Mobile)
-- **Code Quality**: ESLint (Web), Dart Analyzer (Mobile)
+- **Mobile Framework**: React Native (TypeScript/JavaScript)
+- **Language**: TypeScript (Web & Mobile)
+- **Build Tool**: Vite (Web), React Native CLI/Metro (Mobile)
+- **HTTP Client**: Axios (Web & Mobile)
+- **State Management**: React Hooks (Web & Mobile), Context API / Redux (Mobile)
+- **Styling**: CSS Modules (Web), StyleSheet / Styled Components (Mobile)
+- **Code Quality**: ESLint (Web & Mobile), TypeScript (Web & Mobile)
 
 ### Backend (Server)
 - **Framework**: NestJS 11
@@ -103,13 +103,13 @@
 ### Additional Tools
 - **QR Code Generation**:
   - Server: qrcode (Node.js)
-  - Mobile: qr_flutter (Flutter)
+  - Mobile: react-native-qrcode-svg (React Native)
 - **Email Service**: nodemailer (SMTP with Gmail)
 - **Password Hashing**: bcrypt (Server)
 - **File Processing**: fs, path (Server)
 - **Backup System**: Automatic JSON exports with email notifications
-- **Mobile Storage**: shared_preferences (Flutter)
-- **Mobile File Picker**: image_picker (Flutter)
+- **Mobile Storage**: @react-native-async-storage/async-storage (React Native)
+- **Mobile File Picker**: react-native-image-picker (React Native)
 
 ## 📁 Project Structure
 
@@ -197,45 +197,50 @@ web_app/                             # Web Application (React + NestJS)
 ```
 
 ```
-mobile/                              # Flutter Mobile App (iOS & Android)
-├── lib/
-│   ├── main.dart                    # App Entry Point
-│   ├── app.dart                     # Root Widget
-│   ├── models/                      # Data Models
-│   │   ├── user.dart
-│   │   ├── phone.dart
-│   │   ├── hostel.dart
-│   │   └── emergency_details.dart
+mobile/                              # React Native Mobile App (iOS & Android)
+├── src/
+│   ├── App.tsx                      # App Entry Point
+│   ├── index.js                     # Root Entry
+│   ├── models/                      # Data Models (TypeScript)
+│   │   ├── user.ts
+│   │   ├── phone.ts
+│   │   ├── hostel.ts
+│   │   └── emergencyDetails.ts
 │   ├── services/                    # API Services
-│   │   ├── api_service.dart         # HTTP Client (Dio)
-│   │   ├── auth_service.dart        # Authentication
-│   │   └── user_service.dart        # User Management
+│   │   ├── apiService.ts            # HTTP Client (Axios)
+│   │   ├── authService.ts           # Authentication
+│   │   └── userService.ts          # User Management
 │   ├── screens/                     # UI Screens
-│   │   ├── login/
-│   │   │   └── login_screen.dart
-│   │   ├── dashboard/
-│   │   │   └── dashboard_screen.dart
-│   │   ├── users/
-│   │   │   ├── user_list_screen.dart
-│   │   │   ├── user_detail_screen.dart
-│   │   │   └── create_user_screen.dart
-│   │   └── drivers/
-│   │       ├── driver_list_screen.dart
-│   │       └── qr_code_screen.dart
-│   ├── widgets/                     # Reusable Widgets
-│   │   ├── user_card.dart
-│   │   ├── qr_code_viewer.dart
-│   │   └── file_picker.dart
+│   │   ├── Login/
+│   │   │   └── LoginScreen.tsx
+│   │   ├── Dashboard/
+│   │   │   └── DashboardScreen.tsx
+│   │   ├── Users/
+│   │   │   ├── UserListScreen.tsx
+│   │   │   ├── UserDetailScreen.tsx
+│   │   │   └── CreateUserScreen.tsx
+│   │   └── Drivers/
+│   │       ├── DriverListScreen.tsx
+│   │       └── QRCodeScreen.tsx
+│   ├── components/                  # Reusable Components
+│   │   ├── UserCard.tsx
+│   │   ├── QRCodeViewer.tsx
+│   │   └── FilePicker.tsx
 │   ├── utils/                       # Utilities
-│   │   ├── constants.dart           # API URLs, etc.
-│   │   └── storage.dart             # Local storage
-│   └── providers/                   # State Management (if using Provider/Riverpod)
-│       └── user_provider.dart
+│   │   ├── constants.ts            # API URLs, etc.
+│   │   └── storage.ts               # Local storage (AsyncStorage)
+│   ├── context/                     # Context API for State Management
+│   │   └── AuthContext.tsx
+│   └── navigation/                  # Navigation Setup
+│       └── AppNavigator.tsx
 ├── android/                         # Android Configuration
 │   └── app/src/main/AndroidManifest.xml
 ├── ios/                             # iOS Configuration
-│   └── Runner/Info.plist
-├── pubspec.yaml                     # Dependencies
+│   └── Info.plist
+├── package.json                     # Dependencies
+├── tsconfig.json                    # TypeScript Configuration
+├── metro.config.js                  # Metro Bundler Config
+├── babel.config.js                  # Babel Configuration
 └── README.md
 ```
 
@@ -520,32 +525,31 @@ App
     └─> NotificationContainer
 ```
 
-#### Mobile (Flutter)
+#### Mobile (React Native)
 ```
 App
-└─> MaterialApp / CupertinoApp
-    └─> AuthWrapper
+└─> NavigationContainer
+    └─> AuthContext.Provider
         ├─> LoginScreen (if not authenticated)
-        └─> MainScreen (if authenticated)
-            └─> BottomNavigationBar / Drawer
-                ├─> DriverDashboardScreen
-                │   └─> Stats Cards
-                │   └─> Recent Users List
-                ├─> UserListScreen
-                │   └─> UserCard (List)
-                │   └─> SearchBar
-                │   └─> FilterChips
-                ├─> UserDetailScreen
-                │   └─> User Info
-                │   └─> QR Code Viewer (if driver)
-                │   └─> File Viewers
-                ├─> CreateUserScreen
-                │   └─> Form Fields
-                │   └─> File Picker
-                └─> DriverScreen
-                    └─> Driver List
-                    └─> QR Code Generator
-                    └─> QR Code Scanner
+        └─> TabNavigator / DrawerNavigator (if authenticated)
+            ├─> DriverDashboardScreen
+            │   └─> Stats Cards
+            │   └─> Recent Users List
+            ├─> UserListScreen
+            │   └─> UserCard (FlatList)
+            │   └─> SearchBar
+            │   └─> FilterChips
+            ├─> UserDetailScreen
+            │   └─> User Info
+            │   └─> QR Code Viewer (if driver)
+            │   └─> File Viewers
+            ├─> CreateUserScreen
+            │   └─> Form Fields
+            │   └─> File Picker
+            └─> DriverScreen
+                └─> Driver List
+                └─> QR Code Generator
+                └─> QR Code Scanner
 ```
 
 ### State Management
@@ -569,15 +573,15 @@ Component
                       └─> Re-render Component
 ```
 
-#### Mobile (Flutter)
+#### Mobile (React Native)
 ```
-Widget
+Component
   └─> Service (UserService)
-      └─> Dio HTTP Request
+      └─> Axios HTTP Request
           └─> API Endpoint
               └─> Response
-                  └─> Provider/State Update
-                      └─> Rebuild Widget
+                  └─> Context/State Update
+                      └─> Re-render Component
 ```
 
 ## 🔒 Security Architecture
@@ -686,15 +690,15 @@ Widget
 │  (Vite)     │◄────►│   Server    │◄────►│  Database   │
 │  :5173      │      │   :3000     │      │  :27017     │
 └─────────────┘      └─────────────┘      └─────────────┘
-      ▲                      ▲
-      │                      │
-      │              ┌───────┴───────┐
-      │              │               │
-┌─────────────┐ ┌──────────┐  ┌───────────┐
-│  Flutter    │ │ Flutter  │  │  Flutter  │
-│   iOS App   │ │ Android  │  │  Web App  │
-│  (Simulator)│ │(Emulator)│  │  (Browser)│
-└─────────────┘ └──────────┘  └───────────┘
+                              ▲
+                              │
+                      ┌───────┴───────┐
+                      │               │
+                ┌─────────────┐ ┌────────────┐
+                │ React Native│ │React Native│
+                │   iOS App   │ │  Android   │
+                │  (Simulator)│ │ (Emulator) │
+                └─────────────┘ └────────────┘
 ```
 
 ### Production (Recommended)
@@ -718,7 +722,7 @@ Widget
        │                  │                  │
        ▼                  ▼                  ▼
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   React     │    │  Flutter    │    │  Flutter    │
+│   React     │    │ React Native│    │ React Native│
 │  (Static)   │    │  iOS App    │    │ Android App │ 
 │   Build     │    │  (Native)   │    │  (Native)   │
 │  (CDN)      │    └─────────────┘    └─────────────┘
@@ -807,11 +811,11 @@ Form Data
 - **Observer Pattern**: React state updates
 
 ### Frontend (Mobile)
-- **Widget Pattern**: Reusable Flutter widgets
+- **Component Pattern**: Reusable React Native components
 - **Service Pattern**: API service layer
-- **Provider Pattern**: State management (Provider/Riverpod)
+- **Context Pattern**: State management (Context API/Redux)
 - **Repository Pattern**: Data access abstraction
-- **BLoC Pattern**: Business Logic Component (optional)
+- **Custom Hooks Pattern**: Reusable logic hooks
 
 ## 🔧 Configuration
 
@@ -833,7 +837,7 @@ SMTP_FROM=IITD System <your-email@gmail.com>
 ```
 
 ### CORS Configuration
-- **Development**: Allow all origins (for Flutter mobile apps)
+- **Development**: Allow all origins (for React Native mobile apps)
 - **Production**: Restrict to specific domains
 - **Mobile Apps**: No CORS restrictions (native apps)
 

@@ -26,9 +26,9 @@ async function bootstrap() {
     }),
   );
   
-  // Enable CORS for frontend communication (React + Flutter)
+  // Enable CORS for frontend communication (React Web + React Native)
   app.enableCors({
-    origin: true, // Allow all origins (for Flutter mobile apps) - restrict in production
+    origin: true, // Allow all origins (for React Native mobile apps) - restrict in production
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],

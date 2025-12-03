@@ -1,0 +1,132 @@
+name: Terraform Apply
+
+on:
+  workflow_run:
+    workflows: ["Terraform Plan"]
+    types:
+      - completed
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to apply'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      auto_approve:
+        description: 'Auto-approve apply (use with caution)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  TF_VERSION: '1.6.0'
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    if: |
+      github.event.workflow_run.conclusion == 'success' || 
+      github.event_name == 'workflow_dispatch'
+    defaults:
+      run:
+        working-directory: ./infra/terraform
+    
+    strategy:
+      matrix:
+        environment: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', github.event.inputs.environment)) || fromJSON('["dev"]') }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan-${{ matrix.environment }}
+          path: ./infra/terraform/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: terraform-apply-${{ matrix.environment }}
+          aws-region: ${{ env.AWS_REGION }}
+        # Alternative: Use access keys (less secure)
+        # with:
+        #   aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        #   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        #   aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=iitd/${{ matrix.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -input=false || \
+          terraform init -input=false
+
+      - name: Terraform Apply
+        if: |
+          (github.event.inputs.auto_approve == 'true') ||
+          (matrix.environment == 'dev' && github.event_name == 'workflow_run')
+        run: |
+          terraform apply \
+            -var="environment=${{ matrix.environment }}" \
+            -var="aws_region=${{ env.AWS_REGION }}" \
+            -var="db_master_username=${{ secrets.DB_MASTER_USERNAME }}" \
+            -var="db_master_password=${{ secrets.DB_MASTER_PASSWORD }}" \
+            -auto-approve \
+            tfplan-${{ matrix.environment }}
+
+      - name: Terraform Apply (Manual Approval Required)
+        if: |
+          github.event.inputs.auto_approve != 'true' &&
+          (matrix.environment == 'staging' || matrix.environment == 'prod')
+        run: |
+          echo "⚠️ Manual approval required for ${{ matrix.environment }} environment"
+          echo "Please review the plan and run terraform apply manually or set auto_approve=true"
+          exit 1
+
+      - name: Terraform Output
+        if: success()
+        run: terraform output -json > terraform-output-${{ matrix.environment }}.json
+
+      - name: Upload Output Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-output-${{ matrix.environment }}
+          path: infra/terraform/terraform-output-${{ matrix.environment }}.json
+          retention-days: 30
+
+      - name: Update Kubernetes Config (if EKS created)
+        if: success() && matrix.environment == 'dev'
+        run: |
+          # Extract EKS cluster name from outputs
+          CLUSTER_NAME=$(terraform output -raw eks_cluster_id 2>/dev/null || echo "")
+          if [ -n "$CLUSTER_NAME" ]; then
+            echo "EKS cluster created: $CLUSTER_NAME"
+            echo "Update kubectl config with:"
+            echo "aws eks update-kubeconfig --name $CLUSTER_NAME --region ${{ env.AWS_REGION }}"
+          fi
+

@@ -1,0 +1,72 @@
+name: ArgoCD Sync
+
+on:
+  workflow_run:
+    workflows: ["Deploy Server", "Deploy Client"]
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'ArgoCD Application Name (iitd-server, iitd-client, or all)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - iitd-server
+          - iitd-client
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+          rm argocd-linux-amd64
+
+      - name: Login to ArgoCD
+        run: |
+          argocd login ${{ vars.ARGOCD_SERVER_URL || secrets.ARGOCD_SERVER_URL }} \
+            --username ${{ secrets.ARGOCD_USERNAME }} \
+            --password ${{ secrets.ARGOCD_PASSWORD }} \
+            --insecure || true
+
+      - name: Sync Applications
+        run: |
+          APP_NAME="${{ github.event.inputs.app_name || 'all' }}"
+          
+          if [ "$APP_NAME" = "all" ] || [ "$APP_NAME" = "iitd-server" ]; then
+            echo "Syncing iitd-server..."
+            argocd app sync iitd-server --prune || echo "Failed to sync iitd-server"
+            argocd app wait iitd-server --timeout 300 || echo "Wait timeout for iitd-server"
+          fi
+          
+          if [ "$APP_NAME" = "all" ] || [ "$APP_NAME" = "iitd-client" ]; then
+            echo "Syncing iitd-client..."
+            argocd app sync iitd-client --prune || echo "Failed to sync iitd-client"
+            argocd app wait iitd-client --timeout 300 || echo "Wait timeout for iitd-client"
+          fi
+
+      - name: Get Application Status
+        run: |
+          APP_NAME="${{ github.event.inputs.app_name || 'all' }}"
+          
+          if [ "$APP_NAME" = "all" ] || [ "$APP_NAME" = "iitd-server" ]; then
+            echo "=== iitd-server Status ==="
+            argocd app get iitd-server || echo "Failed to get iitd-server status"
+          fi
+          
+          if [ "$APP_NAME" = "all" ] || [ "$APP_NAME" = "iitd-client" ]; then
+            echo "=== iitd-client Status ==="
+            argocd app get iitd-client || echo "Failed to get iitd-client status"
+          fi
+

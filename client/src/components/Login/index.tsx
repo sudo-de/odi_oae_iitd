@@ -78,7 +78,7 @@ const Login = ({ onLogin }: LoginProps) => {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <img src="/logo.png" alt="OAE at IIT Delhi" className="login-logo" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="OAE at IIT Delhi" className="login-logo" />
           <h1>Log in with your email</h1>
         </div>
 

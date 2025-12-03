@@ -6,43 +6,101 @@ on:
     paths:
       - 'server/**'
       - '.github/workflows/deploy-server.yml'
+      - 'server/Dockerfile'
   workflow_dispatch:
 
 permissions:
   contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/server
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: package-lock.json
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install root dependencies
-        run: npm install
-
-      - name: Install server dependencies
-        working-directory: ./server
-        run: npm install
-
-      - name: Build Server
-        working-directory: ./server
-        run: npm run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          name: server-build
-          path: server/dist
-          retention-days: 7
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
 
-      # Add your deployment steps here
-      # Example: Deploy to your hosting platform (Heroku, Railway, AWS, etc.)
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          file: ./server/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up Kubeconfig
+        uses: azure/k8s-set-context@v3
+        with:
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          method: kubeconfig
+
+      - name: Update Kubernetes deployment image
+        run: |
+          # Get the image tag (use SHA-based tag for traceability)
+          IMAGE_TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          
+          # Update the deployment manifest (more specific pattern)
+          sed -i "s|image: ghcr.io/.*/server.*|image: ${IMAGE_TAG}|g" infra/k8s/server/deployment.yaml
+          
+          # Verify the update
+          echo "Updated image to: ${IMAGE_TAG}"
+          grep "image:" infra/k8s/server/deployment.yaml
+          
+          # Apply the updated deployment
+          kubectl apply -f infra/k8s/server/
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/iitd-server -n default --timeout=5m
+
+      - name: Trigger ArgoCD sync (optional)
+        if: ${{ vars.ARGOCD_SERVER_URL != '' }}
+        run: |
+          # If ArgoCD is configured, trigger a sync
+          # This requires ArgoCD CLI or API access
+          echo "ArgoCD sync can be triggered manually or via webhook"
+          # argocd app sync iitd-server
 

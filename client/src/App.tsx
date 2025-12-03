@@ -93,7 +93,7 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/odi_oae_iitd">
     <div className="app" style={{ width: '100%', minHeight: '100vh' }}>
         <Routes>
           {/* Root path - redirect to OAE or dashboard */}

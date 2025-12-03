@@ -100,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Header - Logo */}
       <div className="sidebar-header">
         <div className="brand-logo">
-          <img src="/logo.png" alt="OAE" className="logo-img" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="OAE" className="logo-img" />
           {!isCollapsed && <span className="brand-text">OAE</span>}
         </div>
         <button 
