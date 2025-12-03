@@ -1,29 +1,19 @@
-name: MongoDB Tests
+name: Deploy Server
 
 on:
   push:
     branches: [ main, master ]
     paths:
       - 'server/**'
-      - '.github/workflows/mongodb-test.yml'
+      - '.github/workflows/deploy-server.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  test-with-mongodb:
+  deploy:
     runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:7
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,10 +32,17 @@ jobs:
         working-directory: ./server
         run: npm install
 
-      - name: Run tests with MongoDB
+      - name: Build Server
         working-directory: ./server
-        env:
-          MONGODB_URI: mongodb://localhost:27017/iitd-test-db
-          NODE_ENV: test
-        run: npm test
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-build
+          path: server/dist
+          retention-days: 7
+
+      # Add your deployment steps here
+      # Example: Deploy to your hosting platform (Heroku, Railway, AWS, etc.)
 
