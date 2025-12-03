@@ -60,6 +60,22 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Role-based access control based on client type
+    const clientType = loginDto.clientType || 'web'; // Default to web for backward compatibility
+    const userRole = user.role?.toLowerCase();
+
+    if (clientType === 'mobile') {
+      // Mobile app: Only allow Student and Driver roles
+      if (userRole !== 'student' && userRole !== 'driver') {
+        throw new UnauthorizedException('Access denied. Mobile app login is only available for Students and Drivers.');
+      }
+    } else if (clientType === 'web') {
+      // Web client: Only allow Admin and Staff roles
+      if (userRole !== 'admin' && userRole !== 'staff') {
+        throw new UnauthorizedException('Access denied. Web login is only available for Administrators and Staff.');
+      }
+    }
+
     const payload = { email: user.email, sub: user._id, role: user.role };
 
     const userDetails = await this.userModel.findById(user._id).exec();

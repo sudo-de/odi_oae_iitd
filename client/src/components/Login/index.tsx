@@ -34,9 +34,17 @@ const Login = ({ onLogin }: LoginProps) => {
       const response = await axios.post(buildApiUrl('/auth/login'), {
         email: email.trim(),
         password: password,
+        clientType: 'web',
       });
 
       if (response.data.access_token && response.data.user) {
+        const userRole = response.data.user.role;
+        // Validate that only Admin or Staff roles can login
+        if (userRole !== 'admin' && userRole !== 'staff') {
+          setError('Access denied. This portal is only for Administrators and Staff.');
+          setErrorType('other');
+          return;
+        }
         onLogin(response.data.access_token, response.data.user);
         navigate('/dashboard', { replace: true });
       } else {
@@ -55,6 +63,9 @@ const Login = ({ onLogin }: LoginProps) => {
       } else if (errorMessage === 'Account not set up. Please reset your password.') {
         setError('Account not set up');
         setErrorType('wrong_password');
+      } else if (errorMessage?.includes('Access denied') || errorMessage?.includes('Web login is only available')) {
+        setError('Access denied. This portal is only for Administrators and Staff.');
+        setErrorType('other');
       } else if (errorMessage === 'Invalid credentials' || err.response?.status === 401) {
         setError('Invalid email or password');
         setErrorType('wrong_password');

@@ -13,10 +13,22 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  async login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: LoginDto, @Request() req) {
     console.log('[AuthController] Login request received');
     console.log('[AuthController] Email:', loginDto?.email);
     console.log('[AuthController] Password provided:', !!loginDto?.password);
+    
+    // Detect client type from User-Agent header if not provided in body
+    if (!loginDto.clientType) {
+      const userAgent = req.headers['user-agent'] || '';
+      if (userAgent.includes('ReactNative') || userAgent.includes('Expo') || userAgent.includes('Mobile')) {
+        loginDto.clientType = 'mobile';
+      } else {
+        loginDto.clientType = 'web';
+      }
+    }
+    
+    console.log('[AuthController] Client type:', loginDto.clientType);
     console.log('[AuthController] LoginDto:', JSON.stringify(loginDto, null, 2));
     
     try {
