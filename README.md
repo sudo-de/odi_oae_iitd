@@ -84,7 +84,7 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
          ▼                                               ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌──────────────────┐
 │  File Storage   │    │  Email Service  │    │   Collections    │
-│  (Local/Cloud)  │    │   (SMTP)        │    │   - Users        │
+│  (Local/Cloud)  │◄──►│   (SMTP)        │◄──►│   - Users        │
 └─────────────────┘    └─────────────────┘    │   - RideLocations│
                                               │   - RideBills    │
                                               └──────────────────┘
