@@ -1,0 +1,48 @@
+name: MongoDB Tests
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/mongodb-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-with-mongodb:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm install
+
+      - name: Run tests with MongoDB
+        working-directory: ./server
+        env:
+          MONGODB_URI: mongodb://localhost:27017/iitd-test-db
+          NODE_ENV: test
+        run: npm test
+
