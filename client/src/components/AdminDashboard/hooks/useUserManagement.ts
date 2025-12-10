@@ -22,14 +22,44 @@ export const useUserManagement = (token: string) => {
     try {
       setLoading(true);
       setError('');
+      
+      if (!token) {
+        setError('No authentication token found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Fetching users with token:', token.substring(0, 20) + '...');
+      
+      // Decode JWT token to see what email is in it (for debugging)
+      try {
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          console.log('JWT Token payload:', payload);
+          console.log('Email in token:', payload.email);
+        }
+      } catch (e) {
+        console.warn('Could not decode token:', e);
+      }
+      
       const response = await axios.get('http://localhost:3000/users', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       setUsers(response.data);
+      setError(''); // Clear any previous errors
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch users');
+      console.error('Error fetching users:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch users';
+      const statusCode = err.response?.status;
+      
+      if (statusCode === 401) {
+        setError('Unauthorized: Your session has expired or is invalid. Please log out and log in again.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -193,8 +223,14 @@ export const useUserManagement = (token: string) => {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (token) {
+      fetchUsers();
+    } else {
+      setError('No authentication token. Please log in again.');
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   return {
     users,

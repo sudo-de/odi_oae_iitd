@@ -28,6 +28,8 @@
     "test:coverage": "vitest --coverage",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
+    "create-admin": "ts-node src/scripts/create-admin-user.ts",
+    "update-admin-email": "ts-node src/scripts/update-admin-email.ts",
     "backfill-passwords": "ts-node src/scripts/backfill-passwords.ts",
     "update-ride-locations": "ts-node src/scripts/update-ride-locations-indexes.ts",
     "sync-driver-qr": "ts-node src/scripts/sync-driver-qr-codes.ts",
@@ -55,6 +57,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "dotenv": "^16.4.7",
+    "mongodb": "^6.20.0",
     "mongoose": "^8.19.2",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.11",
@@ -78,13 +81,13 @@
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
+    "@vitest/coverage-v8": "^4.0.14",
     "eslint": "^8.57.0",
     "mongodb-memory-server": "^10.3.0",
     "nodemon": "^3.1.10",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.14",
-    "@vitest/coverage-v8": "^4.0.14"
+    "vitest": "^4.0.14"
   }
 }

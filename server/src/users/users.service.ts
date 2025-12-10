@@ -298,7 +298,9 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User> {
-    const user = await this.userModel.findOne({ email }).exec();
+    // Normalize email: lowercase and trim to match schema behavior
+    const normalizedEmail = email?.toLowerCase().trim();
+    const user = await this.userModel.findOne({ email: normalizedEmail }).exec();
     return user ? this.transformUserForResponse(user) : null;
   }
 
