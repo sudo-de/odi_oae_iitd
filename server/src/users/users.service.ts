@@ -1,7 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import type { BulkWriteResult } from 'mongodb';
 import { User, UserDocument } from '../schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -9,7 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { readFileSync } from 'fs';
 import * as QRCode from 'qrcode';
 import { Observable } from 'rxjs';
-import { ChangeStream, ChangeStreamDocument } from 'mongodb';
+import { ChangeStreamDocument } from 'mongodb';
 
 @Injectable()
 export class UsersService {
@@ -21,7 +20,7 @@ export class UsersService {
         .then(users => observer.next({ type: 'snapshot', payload: users }))
         .catch(error => observer.error(error));
 
-      let changeStream: ChangeStream<UserDocument> | undefined;
+      let changeStream: ReturnType<Model<UserDocument>['watch']> | undefined;
       try {
         changeStream = this.userModel.watch([], { fullDocument: 'updateLookup' });
       } catch (error) {
@@ -342,7 +341,7 @@ export class UsersService {
     return user ? this.transformUserForResponse(user) : null;
   }
 
-  async bulkUpdateUsers(updates: Array<{ id: string; data: Partial<CreateUserDto> }>): Promise<BulkWriteResult> {
+  async bulkUpdateUsers(updates: Array<{ id: string; data: Partial<CreateUserDto> }>): Promise<ReturnType<Model<UserDocument>['bulkWrite']>> {
     const bulkOps = updates.map(update => {
       if (!Types.ObjectId.isValid(update.id)) {
         throw new BadRequestException(`Invalid user id: ${update.id}`);
