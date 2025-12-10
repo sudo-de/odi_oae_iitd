@@ -35,9 +35,13 @@ export class AuthController {
       const result = await this.authService.login(loginDto);
       console.log('[AuthController] Login successful');
       return result;
-    } catch (error: any) {
-      console.error('[AuthController] Login error:', error.message);
-      console.error('[AuthController] Error stack:', error.stack);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      console.error('[AuthController] Login error:', errorMessage);
+      if (errorStack) {
+        console.error('[AuthController] Error stack:', errorStack);
+      }
       throw error;
     }
   }

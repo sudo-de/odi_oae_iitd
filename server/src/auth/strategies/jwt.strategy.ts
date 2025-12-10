@@ -2,6 +2,12 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UsersService } from '../../users/users.service';
+import { UserDocument } from '../../schemas/user.schema';
+
+interface JwtPayload {
+  email: string;
+  [key: string]: unknown;
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -13,7 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload) {
     console.log('JWT Strategy validate called with payload:', payload);
 
     if (!payload || !payload.email) {
@@ -29,11 +35,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException();
     }
 
-    // Add id property from MongoDB _id (cast to any to access runtime properties)
-    const userDoc = user as any;
+    // Add id property from MongoDB _id
+    const userDoc = user as UserDocument & { _id?: { toString(): string } };
     const userObj = {
       ...user,
-      id: userDoc._id?.toString() || userDoc.id,
+      id: userDoc._id?.toString() || (userDoc as { id?: string }).id,
     };
 
     console.log('Returning user object with id:', userObj.id);

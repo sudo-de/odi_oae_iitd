@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { RideBill, RideBillDocument } from '../schemas/ride-bill.schema';
+import { UserDocument } from '../schemas/user.schema';
 import { CreateRideBillDto } from './dto/create-ride-bill.dto';
 import { UpdateRideBillDto } from './dto/update-ride-bill.dto';
 
@@ -76,7 +77,7 @@ export class RideBillsService {
   }
 
   // Auto-sync method to generate sample ride bills data
-  async autoSyncRideBills(drivers: any[], students: any[]): Promise<void> {
+  async autoSyncRideBills(drivers: UserDocument[], students: UserDocument[]): Promise<void> {
     console.log('Starting auto-sync for ride bills...');
 
     // Clear existing data

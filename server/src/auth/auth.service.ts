@@ -5,6 +5,7 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { User, UserDocument } from '../schemas/user.schema';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -18,7 +19,7 @@ export class AuthService {
     private emailService: EmailService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<{ user: any; error?: string }> {
+  async validateUser(email: string, password: string): Promise<{ user: UserDocument | null; error?: string }> {
     console.log(`[AuthService] Validating user with email: ${email}`);
     const user = await this.userModel.findOne({ email }).exec();
     
@@ -167,7 +168,7 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
-  async createUser(userData: any) {
+  async createUser(userData: CreateUserDto) {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     const user = new this.userModel({
       ...userData,
@@ -176,7 +177,7 @@ export class AuthService {
     return user.save();
   }
 
-  private transformUser(user: UserDocument | any) {
+  private transformUser(user: UserDocument) {
     const userObj = user.toObject ? user.toObject() : user;
 
     if (userObj.profilePhoto && userObj.profilePhoto.data) {
@@ -208,7 +209,7 @@ export class AuthService {
     }
   }
 
-  async updateUser(userId: string, updateData: any) {
+  async updateUser(userId: string, updateData: Partial<User>) {
     try {
       console.log('AuthService.updateUser called with:', userId, updateData);
       const updatedUser = await this.userModel.findByIdAndUpdate(userId, updateData, { new: true }).exec();

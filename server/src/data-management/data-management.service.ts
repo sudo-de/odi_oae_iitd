@@ -68,7 +68,7 @@ export class DataManagementService {
     }
   }
 
-  private async sendBackupNotifications(collections: any, filename: string): Promise<void> {
+  private async sendBackupNotifications(collections: { users: number; rideLocations: number; rideBills: number }, filename: string): Promise<void> {
     try {
       // Check if email notifications are enabled for backups
       const settings = await this.getBackupSettings();
