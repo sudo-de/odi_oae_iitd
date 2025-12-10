@@ -119,6 +119,7 @@ export const UserSchema = SchemaFactory.createForClass(User);
 
 // Create indexes for better query performance
 // Note: email index is automatically created by unique: true in the decorator
+// User.Schema.index({ email: 1 }, { unique: true });
 UserSchema.index({ role: 1 });
 UserSchema.index({ isActive: 1 });
 UserSchema.index({ 'phone.number': 1 });
