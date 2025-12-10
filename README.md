@@ -411,7 +411,6 @@ Create a `.env` file in the `server` directory or set environment variables:
 # Examples:
 # MONGODB_URI=mongodb://username:password@host:port/database
 # MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/iitd-db
 
 # JWT Authentication
 JWT_SECRET=your-super-secret-key
@@ -438,7 +437,7 @@ docker-compose up -d
 ```bash
 # Create .env file with MONGODB_URI
 cd server
-echo "MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/iitd-db" > .env
+echo "MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/yourdatabase" > .env
 docker-compose up -d
 ```
 
