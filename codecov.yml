@@ -28,3 +28,9 @@ flags:
       - server/
     carryforward: true
 
+# Ignore patterns for coverage (optional - uncomment if needed)
+# ignore:
+#   - "server/src/**/*.spec.ts"
+#   - "server/src/**/*.e2e.spec.ts"
+#   - "server/src/**/*.integration.spec.ts"
+

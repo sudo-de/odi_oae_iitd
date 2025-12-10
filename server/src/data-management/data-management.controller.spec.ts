@@ -21,7 +21,9 @@ describe('DataManagementController (e2e)', () => {
   }, 30000); // Increase timeout for full app initialization
 
   afterEach(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('/data-management/stats (GET)', () => {

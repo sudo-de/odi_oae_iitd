@@ -8,7 +8,15 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./test/setup.ts'],
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', 'test/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['node_modules', 'dist', '.git', '.cache', '**/*.d.ts'],
+    exclude: [
+      'node_modules', 
+      'dist', 
+      '.git', 
+      '.cache', 
+      '**/*.d.ts',
+      'src/**/*.controller.spec.ts', // Exclude e2e controller tests (they use e2e config)
+      'src/**/*.e2e.spec.ts', // Exclude e2e tests
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

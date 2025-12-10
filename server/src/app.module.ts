@@ -18,7 +18,21 @@ import { EmailModule } from './email/email.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/iitd-db'),
+    MongooseModule.forRootAsync({
+      useFactory: () => {
+        const mongoUri = process.env.MONGODB_URI;
+        if (!mongoUri) {
+          throw new Error(
+            'MONGODB_URI environment variable is required. ' +
+            'Please set it in your .env file or as an environment variable. ' +
+            'Example: MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database'
+          );
+        }
+        return {
+          uri: mongoUri,
+        };
+      },
+    }),
     UsersModule,
     AuthModule,
     RideLocationsModule,

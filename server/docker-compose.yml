@@ -12,7 +12,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      MONGODB_URI: ${MONGODB_URI}
+      MONGODB_URI: ${MONGODB_URI:-}
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-key-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
