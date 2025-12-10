@@ -19,7 +19,7 @@ async function updateRideLocationsIndexes() {
   // Check if collection exists and get current indexes
   const existingIndexes = await collection.indexes();
   console.log('\nExisting indexes:');
-  existingIndexes.forEach((index: any) => {
+  existingIndexes.forEach((index: { name: string; key: Record<string, number> }) => {
     console.log(`  - ${index.name}:`, JSON.stringify(index.key));
   });
 
@@ -33,15 +33,21 @@ async function updateRideLocationsIndexes() {
     // Ensure all indexes from schema are created
     await RideLocationModel.createIndexes();
     console.log('✓ Indexes created/updated successfully');
-  } catch (error: any) {
-    console.error('Error creating indexes:', error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorCode = (error as { code?: number }).code;
+    console.error('Error creating indexes:', errorMessage);
     
     // If there's a duplicate key error, we need to handle it
-    if (error.code === 11000 || error.message.includes('duplicate key')) {
+    if (errorCode === 11000 || errorMessage.includes('duplicate key')) {
       console.log('\n⚠ Found duplicate entries. Checking for duplicates...');
       
       // Find duplicate routes
-      const duplicates = await collection.aggregate([
+      const duplicates = await collection.aggregate<{
+        _id: { fromLocation: string; toLocation: string };
+        count: number;
+        ids: unknown[];
+      }>([
         {
           $group: {
             _id: { fromLocation: '$fromLocation', toLocation: '$toLocation' },
@@ -56,7 +62,7 @@ async function updateRideLocationsIndexes() {
 
       if (duplicates.length > 0) {
         console.log(`\nFound ${duplicates.length} duplicate route(s):`);
-        duplicates.forEach((dup: any) => {
+        duplicates.forEach((dup) => {
           console.log(`  - ${dup._id.fromLocation} → ${dup._id.toLocation} (${dup.count} entries)`);
         });
         console.log('\n⚠ Please manually remove duplicates before creating unique index.');
@@ -68,7 +74,7 @@ async function updateRideLocationsIndexes() {
   // Verify indexes after creation
   const finalIndexes = await collection.indexes();
   console.log('\nFinal indexes:');
-  finalIndexes.forEach((index: any) => {
+  finalIndexes.forEach((index: { name: string; key: Record<string, number>; unique?: boolean }) => {
     const isUnique = index.unique ? ' (UNIQUE)' : '';
     console.log(`  ✓ ${index.name}:`, JSON.stringify(index.key) + isUnique);
   });

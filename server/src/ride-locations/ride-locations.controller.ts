@@ -29,13 +29,14 @@ export class RideLocationsController {
       const result = await this.rideLocationsService.create(createRideLocationDto);
       console.log('Successfully created ride location:', result);
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorObj = error as { message?: string; status?: number; response?: unknown; stack?: string };
       console.error('Error in create controller:', error);
       console.error('Error details:', {
-        message: error.message,
-        status: error.status,
-        response: error.response,
-        stack: error.stack
+        message: errorObj.message,
+        status: errorObj.status,
+        response: errorObj.response,
+        stack: errorObj.stack
       });
       
       if (error instanceof HttpException) {
@@ -43,10 +44,10 @@ export class RideLocationsController {
       }
       
       // Format error response consistently
-      const errorMessage = error.message || 'Failed to create ride location';
+      const errorMessage = errorObj.message || 'Failed to create ride location';
       throw new HttpException(
         { message: errorMessage },
-        error.status || HttpStatus.BAD_REQUEST,
+        errorObj.status || HttpStatus.BAD_REQUEST,
       );
     }
   }

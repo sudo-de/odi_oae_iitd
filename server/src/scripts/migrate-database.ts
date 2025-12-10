@@ -33,7 +33,7 @@ async function migrateDatabase() {
     const existingIndexes = await rideLocationsCollection.indexes();
 
     console.log(`Found ${existingIndexes.length} indexes on ride locations`);
-    existingIndexes.forEach((index: any) => {
+    existingIndexes.forEach((index: { key: Record<string, number> }) => {
       console.log(`  - ${JSON.stringify(index.key)}`);
     });
 

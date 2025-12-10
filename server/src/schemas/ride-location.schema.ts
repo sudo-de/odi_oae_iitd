@@ -26,7 +26,7 @@ RideLocationSchema.index({ createdAt: -1 });
 RideLocationSchema.set('toJSON', {
   virtuals: true,
   versionKey: false,
-  transform: (_: unknown, ret: Record<string, any>) => {
+  transform: (_: unknown, ret: Record<string, unknown>) => {
     ret.id = ret._id?.toString?.() ?? ret._id;
     delete ret._id;
     return ret;

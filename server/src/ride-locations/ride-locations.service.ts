@@ -25,23 +25,24 @@ export class RideLocationsService {
       const saved = await created.save();
       console.log('Service: Successfully saved ride location:', saved);
       return saved;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorObj = error as { code?: number; message?: string; name?: string; errors?: Record<string, { message: string }> };
       console.error('Service: Error creating ride location:', error);
-      console.error('Service: Error code:', error.code);
-      console.error('Service: Error message:', error.message);
-      console.error('Service: Error name:', error.name);
+      console.error('Service: Error code:', errorObj.code);
+      console.error('Service: Error message:', errorObj.message);
+      console.error('Service: Error name:', errorObj.name);
       
-      if (error.code === 11000) {
+      if (errorObj.code === 11000) {
         throw new BadRequestException('A ride location with this route already exists');
       }
       
       // Handle validation errors from Mongoose
-      if (error.name === 'ValidationError') {
-        const messages = Object.values(error.errors || {}).map((err: any) => err.message);
+      if (errorObj.name === 'ValidationError') {
+        const messages = Object.values(errorObj.errors || {}).map((err) => err.message);
         throw new BadRequestException(messages.join(', ') || 'Validation failed');
       }
       
-      throw new BadRequestException(error.message || 'Failed to create ride location');
+      throw new BadRequestException(errorObj.message || 'Failed to create ride location');
     }
   }
 
@@ -73,14 +74,15 @@ export class RideLocationsService {
       }
 
       return updated;
-    } catch (error: any) {
-      if (error.code === 11000) {
+    } catch (error: unknown) {
+      const errorObj = error as { code?: number; message?: string };
+      if (errorObj.code === 11000) {
         throw new BadRequestException('A ride location with this route already exists');
       }
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new BadRequestException(error.message || 'Failed to update ride location');
+      throw new BadRequestException(errorObj.message || 'Failed to update ride location');
     }
   }
 
