@@ -90,7 +90,8 @@ jobs:
         id: check_integration_tests
         run: |
           echo "Checking for integration test files..."
-          if [ -n "$(find src -name '*.integration.spec.ts' -type f 2>/dev/null)" ]; then
+          if [ -n "$(find src -name '*.integration.spec.ts' -type f 2>/dev/null)" ] || \
+             [ -n "$(find src -name '*.service.spec.ts' -type f 2>/dev/null)" ]; then
             echo "Found integration test files"
             echo "has_tests=true" >> $GITHUB_OUTPUT
           else

@@ -19,7 +19,7 @@
     "test:unit": "vitest --run",
     "test:unit:working": "vitest src/app.controller.spec.ts src/services/email.service.spec.ts",
     "test:unit:service": "vitest src/users/users.service.spec.ts src/data-management/data-management.service.spec.ts",
-    "test:integration": "vitest --config vitest.integration.config.ts",
+    "test:integration": "vitest --config vitest.integration.config.ts --run",
     "test:e2e": "vitest --config vitest.e2e.config.ts",
     "test:contract": "vitest test/pacts",
     "test:load": "k6 run test/load/api-load-test.js || echo 'k6 not installed. Run: brew install k6'",
