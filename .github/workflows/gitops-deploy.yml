@@ -1,0 +1,203 @@
+name: GitOps Deployment
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'infra/**'
+      - 'server/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  KUBERNETES_NAMESPACE_STAGING: iitd-staging
+  KUBERNETES_NAMESPACE_PRODUCTION: iitd-production
+
+jobs:
+  sync-secrets:
+    name: Sync Secrets to Kubernetes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    permissions:
+      contents: read
+      secrets: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        run: |
+          # Configure kubectl to connect to your cluster
+          # Option 1: Using kubeconfig from secrets
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+          
+          # Option 2: Using cloud provider authentication (uncomment as needed)
+          # For GKE:
+          # gcloud container clusters get-credentials CLUSTER_NAME --zone ZONE --project PROJECT_ID
+          # For EKS:
+          # aws eks update-kubeconfig --name CLUSTER_NAME --region REGION
+          # For AKS:
+          # az aks get-credentials --resource-group RESOURCE_GROUP --name CLUSTER_NAME
+
+      - name: Create or update secrets
+        run: |
+          NAMESPACE="${{ github.ref == 'refs/heads/main' && env.KUBERNETES_NAMESPACE_PRODUCTION || env.KUBERNETES_NAMESPACE_STAGING }}"
+          
+          # Create namespace if it doesn't exist
+          kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Create or update secret
+          kubectl create secret generic iitd-secrets \
+            --from-literal=mongodb-uri="${{ secrets.MONGODB_URI }}" \
+            --from-literal=jwt-secret="${{ secrets.JWT_SECRET }}" \
+            --from-literal=smtp-user="${{ secrets.SMTP_USER }}" \
+            --from-literal=smtp-pass="${{ secrets.SMTP_PASS }}" \
+            --namespace=$NAMESPACE \
+            --dry-run=client -o yaml | kubectl apply -f -
+          
+          echo "✅ Secrets synced to namespace: $NAMESPACE"
+
+  deploy-with-argocd:
+    name: Deploy with ArgoCD
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    needs: [sync-secrets]
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+          rm argocd-linux-amd64
+
+      - name: Login to ArgoCD
+        run: |
+          ARGOCD_SERVER="${{ secrets.ARGOCD_SERVER }}"
+          ARGOCD_USERNAME="${{ secrets.ARGOCD_USERNAME }}"
+          ARGOCD_PASSWORD="${{ secrets.ARGOCD_PASSWORD }}"
+          
+          argocd login $ARGOCD_SERVER --username $ARGOCD_USERNAME --password $ARGOCD_PASSWORD --insecure
+
+      - name: Sync ArgoCD Application
+        run: |
+          APP_NAME="${{ github.ref == 'refs/heads/main' && 'iitd-server-production' || 'iitd-server-staging' }}"
+          
+          argocd app sync $APP_NAME
+          argocd app wait $APP_NAME --timeout 300
+
+  deploy-with-kubectl:
+    name: Deploy with kubectl (Fallback)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    needs: [sync-secrets]
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: '5.0.0'
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+
+      - name: Deploy to Kubernetes
+        run: |
+          OVERLAY="${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}"
+          NAMESPACE="${{ github.ref == 'refs/heads/main' && env.KUBERNETES_NAMESPACE_PRODUCTION || env.KUBERNETES_NAMESPACE_STAGING }}"
+          
+          # Build and apply using Kustomize
+          kubectl apply -k infra/k8s/overlays/$OVERLAY
+          
+          # Wait for rollout
+          kubectl rollout status deployment/$OVERLAY-iitd-server -n $NAMESPACE --timeout=300s
+          
+          echo "✅ Deployment completed to namespace: $NAMESPACE"
+
+  manual-deploy:
+    name: Manual Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment:
+      name: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+
+      - name: Create or update secrets
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          if [ "$ENV" = "production ]; then
+            NAMESPACE="${{ env.KUBERNETES_NAMESPACE_PRODUCTION }}"
+          else
+            NAMESPACE="${{ env.KUBERNETES_NAMESPACE_STAGING }}"
+          fi
+          
+          kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+          
+          kubectl create secret generic iitd-secrets \
+            --from-literal=mongodb-uri="${{ secrets.MONGODB_URI }}" \
+            --from-literal=jwt-secret="${{ secrets.JWT_SECRET }}" \
+            --from-literal=smtp-user="${{ secrets.SMTP_USER }}" \
+            --from-literal=smtp-pass="${{ secrets.SMTP_PASS }}" \
+            --namespace=$NAMESPACE \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy to Kubernetes
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          if [ "$ENV" == "production" ]; then
+            NAMESPACE="${{ env.KUBERNETES_NAMESPACE_PRODUCTION }}"
+          else
+            NAMESPACE="${{ env.KUBERNETES_NAMESPACE_STAGING }}"
+          fi
+          
+          kubectl apply -k infra/k8s/overlays/$ENV
+          DEPLOYMENT_NAME="$ENV-iitd-server"
+          kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE --timeout=300s
+

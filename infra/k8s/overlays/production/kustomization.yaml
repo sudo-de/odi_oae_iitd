@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: iitd-production
+
+resources:
+  - ../../base
+
+namePrefix: prod-
+
+replicas:
+  - name: iitd-server
+    count: 3
+
+images:
+  - name: ghcr.io/your-org/iitd/server
+    newTag: main
+
+patches:
+  - path: deployment-patch.yaml
+    target:
+      kind: Deployment
+
+commonLabels:
+  environment: production
+

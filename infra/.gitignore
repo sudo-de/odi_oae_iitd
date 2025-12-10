@@ -1,0 +1,12 @@
+# Kustomize build outputs
+*.yaml.bak
+*.yaml.orig
+
+# Local kubeconfig files
+kubeconfig.yaml
+*.kubeconfig
+
+# Temporary files
+*.tmp
+.DS_Store
+

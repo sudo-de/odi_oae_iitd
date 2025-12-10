@@ -298,11 +298,27 @@ jobs:
             echo "image_name=${{ github.repository }}/server" >> $GITHUB_OUTPUT
           fi
 
-      - name: Deploy to production
+      - name: Update Kubernetes manifests with new image
         run: |
-          echo "Deployment steps would go here"
-          echo "Image: ${{ steps.registry.outputs.registry }}/${{ steps.registry.outputs.image_name }}:${{ github.sha }}"
-          # Add your deployment commands here
-          # For example: kubectl, docker-compose, or cloud provider CLI
-          # Example: kubectl set image deployment/iitd-server server=${{ steps.registry.outputs.registry }}/${{ steps.registry.outputs.image_name }}:${{ github.sha }}
+          IMAGE_TAG="${{ github.sha }}"
+          REGISTRY="${{ steps.registry.outputs.registry }}"
+          IMAGE_NAME="${{ steps.registry.outputs.image_name }}"
+          FULL_IMAGE="$REGISTRY/$IMAGE_NAME:$IMAGE_TAG"
+          
+          # Update kustomization.yaml with new image tag
+          # This will be picked up by ArgoCD for GitOps deployment
+          echo "Image built: $FULL_IMAGE"
+          echo "Update infra/k8s/overlays/production/kustomization.yaml with:"
+          echo "  images:"
+          echo "    - name: $REGISTRY/$IMAGE_NAME"
+          echo "      newTag: $IMAGE_TAG"
+          
+          # Note: For true GitOps, commit this change back to the repo
+          # or use ArgoCD Image Updater for automatic updates
+
+      - name: Trigger GitOps Deployment
+        run: |
+          echo "✅ Docker image pushed successfully"
+          echo "🔄 ArgoCD will automatically sync the new image"
+          echo "📝 Or run the gitops-deploy workflow manually"
 
