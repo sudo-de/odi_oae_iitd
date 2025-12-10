@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   server:
     build:
@@ -14,9 +12,12 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      # MongoDB Atlas connection (from .env file)
       MONGODB_URI: ${MONGODB_URI}
+      # JWT Configuration
       JWT_SECRET: ${JWT_SECRET:-change-this-secret-key-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      # Email Configuration
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
@@ -33,8 +34,42 @@ services:
       retries: 3
     networks:
       - iitd-network
+    # Uncomment the following line if you want to use local MongoDB instead of MongoDB Atlas
+    # depends_on:
+    #   - mongodb
+
+  # Optional: Local MongoDB service (for development/testing)
+  # Uncomment this service if you want to use local MongoDB instead of MongoDB Atlas
+  # Comment out or remove this service if using MongoDB Atlas (recommended for production)
+  mongodb:
+    image: mongo:7
+    container_name: iitd-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: iitd-db
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-config:/data/configdb
+    networks:
+      - iitd-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 networks:
   iitd-network:
     driver: bridge
+
+volumes:
+  mongodb-data:
+    driver: local
+  mongodb-config:
+    driver: local
 

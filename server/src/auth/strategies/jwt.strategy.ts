@@ -28,10 +28,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     try {
       console.log('JWT Strategy validate called with payload:', JSON.stringify(payload, null, 2));
 
-      if (!payload || !payload.email) {
+    if (!payload || !payload.email) {
         console.error('JWT payload missing email. Payload:', payload);
         throw new UnauthorizedException('JWT token missing email');
-      }
+    }
 
       // Normalize email for lookup
       const normalizedEmail = payload.email.toLowerCase().trim();
@@ -71,16 +71,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if (!userDoc.isActive) {
         console.error('User account is inactive:', normalizedEmail);
         throw new UnauthorizedException('User account is inactive');
-      }
+    }
 
-      // Add id property from MongoDB _id
-      const userObj = {
+    // Add id property from MongoDB _id
+    const userObj = {
         ...userDoc.toObject(),
-        id: userDoc._id?.toString() || (userDoc as { id?: string }).id,
-      };
+      id: userDoc._id?.toString() || (userDoc as { id?: string }).id,
+    };
 
       console.log('✅ JWT validation successful. Returning user object with id:', userObj.id);
-      return userObj;
+    return userObj;
     } catch (error) {
       console.error('❌ JWT validation error:', error);
       if (error instanceof UnauthorizedException) {

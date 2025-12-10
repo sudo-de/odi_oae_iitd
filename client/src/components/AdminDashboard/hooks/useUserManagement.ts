@@ -224,7 +224,7 @@ export const useUserManagement = (token: string) => {
 
   useEffect(() => {
     if (token) {
-      fetchUsers();
+    fetchUsers();
     } else {
       setError('No authentication token. Please log in again.');
       setLoading(false);
