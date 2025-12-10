@@ -44,6 +44,7 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
+        working-directory: ./server
 
   test:
     name: Run Tests
@@ -85,13 +86,33 @@ jobs:
           MONGODB_URI: mongodb://localhost:27017/iitd-db-test
           NODE_ENV: test
 
+      - name: Check for integration tests
+        id: check_integration_tests
+        run: |
+          if find src -name "*.integration.spec.ts" -type f | grep -q .; then
+            echo "has_tests=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_tests=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run integration tests
+        if: steps.check_integration_tests.outputs.has_tests == 'true'
         run: npm run test:integration
         env:
           MONGODB_URI: mongodb://localhost:27017/iitd-db-test
           NODE_ENV: test
 
+      - name: Check for e2e tests
+        id: check_e2e_tests
+        run: |
+          if find src -name "*.e2e.spec.ts" -type f | grep -q .; then
+            echo "has_tests=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_tests=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run e2e tests
+        if: steps.check_e2e_tests.outputs.has_tests == 'true'
         run: npm run test:e2e
         env:
           MONGODB_URI: mongodb://localhost:27017/iitd-db-test
