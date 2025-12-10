@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: ./server/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -75,7 +75,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: ./server/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -89,9 +89,12 @@ jobs:
       - name: Check for integration tests
         id: check_integration_tests
         run: |
-          if find src -name "*.integration.spec.ts" -type f | grep -q .; then
+          echo "Checking for integration test files..."
+          if [ -n "$(find src -name '*.integration.spec.ts' -type f 2>/dev/null)" ]; then
+            echo "Found integration test files"
             echo "has_tests=true" >> $GITHUB_OUTPUT
           else
+            echo "No integration test files found"
             echo "has_tests=false" >> $GITHUB_OUTPUT
           fi
 
@@ -105,9 +108,14 @@ jobs:
       - name: Check for e2e tests
         id: check_e2e_tests
         run: |
-          if find src -name "*.e2e.spec.ts" -type f | grep -q .; then
+          echo "Checking for e2e test files..."
+          if [ -f "src/users/users.controller.spec.ts" ] || \
+             [ -f "src/data-management/data-management.controller.spec.ts" ] || \
+             [ -n "$(find src -name '*.e2e.spec.ts' -type f 2>/dev/null)" ]; then
+            echo "Found e2e test files"
             echo "has_tests=true" >> $GITHUB_OUTPUT
           else
+            echo "No e2e test files found"
             echo "has_tests=false" >> $GITHUB_OUTPUT
           fi
 
@@ -151,7 +159,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: ./server/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
