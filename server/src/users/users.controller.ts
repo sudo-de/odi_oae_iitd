@@ -125,8 +125,24 @@ export class UsersController {
   }
 
   @Post('bulk-update')
-  async bulkUpdate(@Body() updates: Array<{ id: string; data: Partial<CreateUserDto> }>) {
-    return await this.usersService.bulkUpdateUsers(updates);
+  async bulkUpdate(@Body() updates: Array<{ id: string; data: Partial<CreateUserDto> }>): Promise<{
+    insertedCount: number;
+    matchedCount: number;
+    modifiedCount: number;
+    deletedCount: number;
+    upsertedCount: number;
+    insertedIds: Record<string, unknown>;
+    upsertedIds: Record<string, unknown>;
+  }> {
+    return await this.usersService.bulkUpdateUsers(updates) as unknown as {
+      insertedCount: number;
+      matchedCount: number;
+      modifiedCount: number;
+      deletedCount: number;
+      upsertedCount: number;
+      insertedIds: Record<string, unknown>;
+      upsertedIds: Record<string, unknown>;
+    };
   }
 
   @Get('stats/overview')
