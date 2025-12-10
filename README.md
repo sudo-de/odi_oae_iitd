@@ -174,23 +174,26 @@ A comprehensive full-stack application for managing IIT Delhi transport operatio
 
 ### Database Setup
 
-1. **Install MongoDB** (if not already installed):
-   ```bash
-   # macOS with Homebrew
-   brew install mongodb-community
-   brew services start mongodb-community
+This project uses an external MongoDB instance. You can use:
+- **MongoDB Atlas** (cloud): https://www.mongodb.com/cloud/atlas
+- **Self-hosted MongoDB**: Your own MongoDB server
+- **Local MongoDB** (for development): Install and run locally
 
-   # Ubuntu/Debian
-   sudo apt-get install mongodb
+**For Local Development (Optional):**
+```bash
+# macOS with Homebrew
+brew install mongodb-community
+brew services start mongodb-community
 
-   # Windows
-   # Download and install from mongodb.com
-   ```
+# Ubuntu/Debian
+sudo apt-get install mongodb
+sudo systemctl start mongodb
 
-2. **Start MongoDB**:
-   ```bash
-   mongod  # Default port 27017
-   ```
+# Windows
+# Download and install from mongodb.com
+```
+
+**Note:** For Docker deployments, you must provide `MONGODB_URI` as an environment variable pointing to your external MongoDB instance.
 
 ### Environment Configuration
 
@@ -314,6 +317,133 @@ npm run build
 npm start
 ```
 
+### CI/CD with GitHub Actions
+
+The project includes automated CI/CD workflows for the server:
+
+**Workflows:**
+- **`server-ci.yml`**: Comprehensive CI pipeline with linting, testing, building, Docker image building, security scanning, and deployment
+- **`server-docker.yml`**: Dedicated Docker build and push workflow
+
+**Features:**
+- ✅ Automatic linting on every push/PR
+- ✅ Unit, integration, and e2e tests with MongoDB service
+- ✅ Test coverage reporting with Codecov
+- ✅ Docker image building and pushing (supports Docker Hub and GitHub Container Registry)
+- ✅ Multi-platform builds (linux/amd64, linux/arm64)
+- ✅ Security scanning with Trivy
+- ✅ Automated deployment to production (on main branch)
+
+**Workflow Triggers:**
+- Push to `main` or `develop` branches
+- Pull requests to `main` or `develop`
+- Manual workflow dispatch
+- Changes to `server/**` directory
+
+**Required Secrets:**
+The workflows automatically detect and use Docker Hub if secrets are configured:
+- **`DOCKER_USERNAME`**: Docker Hub username (optional - uses GitHub Container Registry if not set)
+- **`DOCKER_PASSWORD`**: Docker Hub password/token (optional - uses GitHub Container Registry if not set)
+
+If Docker Hub secrets are not set, workflows will use GitHub Container Registry (ghcr.io) automatically.
+
+See [`.github/SECRETS.md`](.github/SECRETS.md) for detailed secrets documentation.
+
+**View Workflow Status:**
+- Go to the "Actions" tab in GitHub repository
+- Check workflow runs and their status
+- View logs and test results
+
+### Docker Deployment
+
+The server includes Docker support for easy deployment and development.
+
+#### Using Docker Compose (Recommended)
+
+**Production:**
+```bash
+cd server
+docker-compose up -d
+```
+
+**Development:**
+```bash
+cd server
+docker-compose -f docker-compose.dev.yml up
+```
+
+#### Manual Docker Build
+
+**Build the image:**
+```bash
+cd server
+docker build -t iitd-server:latest .
+```
+
+**Run the container:**
+```bash
+docker run -d \
+  --name iitd-server \
+  -p 3000:3000 \
+  -e MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/iitd-db \
+  -e JWT_SECRET=your-secret-key \
+  -v $(pwd)/uploads:/app/uploads \
+  -v $(pwd)/backups:/app/backups \
+  iitd-server:latest
+```
+
+**Note:** This setup requires an external MongoDB instance. Provide your MongoDB connection string via the `MONGODB_URI` environment variable.
+
+#### Docker Compose Services
+
+The `docker-compose.yml` includes:
+- **Server**: NestJS application with health checks
+- **Networks**: Isolated network for service communication
+- **Volumes**: Persistent storage for uploads and backups
+
+**Note:** This setup uses an external MongoDB instance. You must provide `MONGODB_URI` as an environment variable.
+
+**Environment Variables:**
+Create a `.env` file in the `server` directory or set environment variables:
+
+```env
+# Database - REQUIRED: External MongoDB connection string
+# Examples:
+# MONGODB_URI=mongodb://username:password@host:port/database
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/iitd-db
+
+# JWT Authentication
+JWT_SECRET=your-super-secret-key
+JWT_EXPIRES_IN=1d
+
+# Email Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=IITD System <noreply@iitd.ac.in>
+```
+
+**Setup External MongoDB:**
+
+**Option 1: Environment Variable**
+```bash
+# Set MONGODB_URI before running docker-compose
+export MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/iitd-db
+docker-compose up -d
+```
+
+**Option 2: .env File**
+```bash
+# Create .env file with MONGODB_URI
+cd server
+echo "MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/iitd-db" > .env
+docker-compose up -d
+```
+
+**Important:** The `MONGODB_URI` environment variable is **required** and must be set before starting the server.
+
 ### First-Time Setup
 
 1. **Start the application** in development mode
@@ -346,6 +476,17 @@ npm start
 | `npm run test:server:contract` | Run server contract tests only |
 | `npm run test:server:load` | Run server load tests only |
 | `npm run test:server:coverage` | Generate server test coverage |
+
+### Docker Commands
+
+| Command | Description |
+|---------|-------------|
+| `docker-compose up -d` | Start server and MongoDB in production mode |
+| `docker-compose -f docker-compose.dev.yml up` | Start in development mode with hot reload |
+| `docker-compose down` | Stop and remove containers |
+| `docker-compose logs -f server` | View server logs |
+| `docker-compose ps` | List running containers |
+| `docker build -t iitd-server:latest .` | Build Docker image manually |
 
 ## 🔌 API Endpoints
 
@@ -486,7 +627,9 @@ GET    /app/info            # Application information
 - **Production Ready**: Environment-based configuration
 - **Deployment**: Docker-ready architecture
 - **Monitoring**: Health checks + logging
-- **Containerization**: Docker support
+- **Containerization**: Docker support with multi-stage builds
+- **Docker Compose**: Production and development configurations
+- **CI/CD**: GitHub Actions workflows for automated testing and deployment
 - **Orchestration**: Kubernetes manifests
 - **IaC**: Terraform configurations
 - **GitOps**: ArgoCD for continuous deployment
@@ -653,6 +796,13 @@ brew services start mongodb-community
   - Web: Admin or Staff
   - Mobile: Student or Driver
 - Check server logs for detailed error messages
+
+**Docker Issues**
+- Ensure Docker and Docker Compose are installed
+- Check container logs: `docker-compose logs server`
+- Verify MongoDB connection: `docker-compose exec server node -e "console.log(process.env.MONGODB_URI)"`
+- Restart services: `docker-compose restart`
+- Clean rebuild: `docker-compose down -v && docker-compose up --build`
 
 ### Environment Variables
 
