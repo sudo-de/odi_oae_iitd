@@ -31,7 +31,6 @@ jobs:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     permissions:
       contents: read
-      secrets: read
     
     steps:
       - name: Checkout code
@@ -172,7 +171,7 @@ jobs:
       - name: Create or update secrets
         run: |
           ENV="${{ github.event.inputs.environment }}"
-          if [ "$ENV" = "production ]; then
+          if [ "$ENV" == "production" ]; then
             NAMESPACE="${{ env.KUBERNETES_NAMESPACE_PRODUCTION }}"
           else
             NAMESPACE="${{ env.KUBERNETES_NAMESPACE_STAGING }}"
