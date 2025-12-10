@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -342,12 +342,17 @@ export class UsersService {
   }
 
   async bulkUpdateUsers(updates: Array<{ id: string; data: Partial<CreateUserDto> }>): Promise<any> {
-    const bulkOps = updates.map(update => ({
-      updateOne: {
-        filter: { _id: update.id },
-        update: { $set: update.data }
+    const bulkOps = updates.map(update => {
+      if (!Types.ObjectId.isValid(update.id)) {
+        throw new BadRequestException(`Invalid user id: ${update.id}`);
       }
-    }));
+      return {
+        updateOne: {
+          filter: { _id: new Types.ObjectId(update.id) },
+          update: { $set: update.data }
+        }
+      };
+    });
     
     return this.userModel.bulkWrite(bulkOps);
   }
