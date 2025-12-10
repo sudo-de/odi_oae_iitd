@@ -33,7 +33,7 @@ export class UsersController {
 
   private resolveUserId(id: string, req: Request): string {
     if (id === 'me') {
-      const user: any = req.user;
+      const user = req.user as { _id?: string | { toString(): string }; id?: string } | undefined;
       const resolvedId = user?._id
         ? typeof user._id === 'string'
           ? user._id

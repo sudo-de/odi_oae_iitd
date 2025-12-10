@@ -8,7 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { readFileSync } from 'fs';
 import * as QRCode from 'qrcode';
 import { Observable } from 'rxjs';
-import { ChangeStreamDocument } from 'mongodb';
+import { ChangeStream, ChangeStreamDocument } from 'mongodb';
 
 @Injectable()
 export class UsersService {
@@ -20,7 +20,7 @@ export class UsersService {
         .then(users => observer.next({ type: 'snapshot', payload: users }))
         .catch(error => observer.error(error));
 
-      let changeStream: any;
+      let changeStream: ChangeStream<UserDocument> | undefined;
       try {
         changeStream = this.userModel.watch([], { fullDocument: 'updateLookup' });
       } catch (error) {
@@ -39,7 +39,7 @@ export class UsersService {
         }
       });
 
-      changeStream.on('error', (err: any) => observer.error(err));
+      changeStream.on('error', (err: unknown) => observer.error(err));
 
       return () => {
         if (changeStream) {
@@ -50,8 +50,8 @@ export class UsersService {
   }
 
   // Helper method to transform user data: convert Buffer to base64 for file data
-  protected transformUserForResponse(user: any): any {
-    const userObj = user.toObject ? user.toObject() : user;
+  protected transformUserForResponse(user: UserDocument | User): User {
+    const userObj = (user as UserDocument).toObject ? (user as UserDocument).toObject() : user as User;
     
     // Convert profilePhoto Buffer to base64
     if (userObj.profilePhoto && userObj.profilePhoto.data) {
@@ -73,7 +73,7 @@ export class UsersService {
   }
 
   // Helper method to transform array of users
-  private transformUsersForResponse(users: any[]): any[] {
+  private transformUsersForResponse(users: UserDocument[]): User[] {
     return users.map(user => this.transformUserForResponse(user));
   }
 
@@ -85,7 +85,7 @@ export class UsersService {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     
     // Use MongoDB's insertOne operation
-    const userData: any = {
+    const userData: Partial<CreateUserDto> & { password: string } = {
       ...createUserDto,
       password: hashedPassword,
     };

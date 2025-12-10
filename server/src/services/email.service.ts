@@ -82,7 +82,18 @@ export class EmailService {
     }
   }
 
-  async sendBackupNotification(to: string, name: string, backupInfo: any): Promise<boolean> {
+  async sendBackupNotification(
+    to: string,
+    name: string,
+    backupInfo: {
+      filename?: string;
+      collections?: {
+        users?: number;
+        rideLocations?: number;
+        rideBills?: number;
+      };
+    }
+  ): Promise<boolean> {
     try {
       console.log(`[EmailService] Attempting to send backup notification to: ${to}`);
 
