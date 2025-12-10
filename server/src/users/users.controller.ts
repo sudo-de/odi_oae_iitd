@@ -12,8 +12,7 @@ import {
   Req,
   BadRequestException,
   Sse,
-  MessageEvent,
-  SetMetadata
+  MessageEvent
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { UsersService, UserChangeEvent } from './users.service';

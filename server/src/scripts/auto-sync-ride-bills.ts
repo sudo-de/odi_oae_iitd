@@ -1,9 +1,6 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
-import { RideBillsService } from '../ride-bills/ride-bills.service';
-import { UsersService } from '../users/users.service';
-import { RideBill, RideBillSchema } from '../schemas/ride-bill.schema';
-import { User, UserSchema } from '../schemas/user.schema';
+import { RideBillSchema } from '../schemas/ride-bill.schema';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/iitd-db';
 

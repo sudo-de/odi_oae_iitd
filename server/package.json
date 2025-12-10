@@ -32,7 +32,8 @@
     "update-ride-locations": "ts-node src/scripts/update-ride-locations-indexes.ts",
     "sync-driver-qr": "ts-node src/scripts/sync-driver-qr-codes.ts",
     "auto-sync-ride-bills": "ts-node src/scripts/auto-sync-ride-bills.ts",
-    "migrate-database": "ts-node src/scripts/migrate-database.ts"
+    "migrate-database": "ts-node src/scripts/migrate-database.ts",
+    "update-lockfile": "npm install --package-lock-only --no-workspaces"
   },
   "keywords": [],
   "author": "",

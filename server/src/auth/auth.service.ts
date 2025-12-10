@@ -39,7 +39,7 @@ export class AuthService {
     console.log(`[AuthService] Password comparison result: ${isPasswordValid}`);
     
     if (isPasswordValid) {
-      const { password, ...result } = user.toObject();
+      const { password: _, ...result } = user.toObject();
       return { user: result };
     }
     

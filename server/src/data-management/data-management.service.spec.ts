@@ -189,11 +189,6 @@ describe('DataManagementService', () => {
 
   describe('getBackupHistory', () => {
     it('should return backup history', async () => {
-      const mockBackups = [
-        { filename: 'backup1.json', createdAt: new Date() },
-        { filename: 'backup2.json', createdAt: new Date() },
-      ];
-
       // Mock fs operations for backup directory
       vi.mock('fs', () => ({
         promises: {

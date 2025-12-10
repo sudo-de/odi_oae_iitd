@@ -2,7 +2,7 @@ import { PactV3, MatchersV3 } from '@pact-foundation/pact';
 import { describe, it, expect } from 'vitest';
 import * as path from 'path';
 
-const { like, eachLike } = MatchersV3;
+const { like } = MatchersV3;
 
 describe('Health API Consumer', () => {
   const provider = new PactV3({

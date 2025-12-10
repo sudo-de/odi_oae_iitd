@@ -442,7 +442,7 @@ export class DataManagementService {
             }
 
             // Remove _id to let MongoDB generate new one
-            const { _id, ...userData } = user;
+            const { _id: _, ...userData } = user;
 
             // Hash password if it exists (though imported data should have passwords removed)
             if (userData.password) {
@@ -476,7 +476,7 @@ export class DataManagementService {
             }
 
             // Remove _id to let MongoDB generate new one
-            const { _id, ...locationData } = location;
+            const { _id: _, ...locationData } = location;
             await this.rideLocationModel.create(locationData);
             results.rideLocations.imported++;
           } catch (error) {
@@ -499,7 +499,7 @@ export class DataManagementService {
             }
 
             // Remove _id to let MongoDB generate new one
-            const { _id, ...billData } = bill;
+            const { _id: _, ...billData } = bill;
             await this.rideBillModel.create(billData);
             results.rideBills.imported++;
           } catch (error) {

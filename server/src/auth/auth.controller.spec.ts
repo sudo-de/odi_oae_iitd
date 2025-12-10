@@ -5,7 +5,6 @@ import { AuthService } from './auth.service';
 
 describe('AuthController (unit)', () => {
   let authController: AuthController;
-  let authService: AuthService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -22,7 +21,6 @@ describe('AuthController (unit)', () => {
     }).compile();
 
     authController = module.get<AuthController>(AuthController);
-    authService = module.get<AuthService>(AuthService);
   });
 
   describe('getProfile', () => {

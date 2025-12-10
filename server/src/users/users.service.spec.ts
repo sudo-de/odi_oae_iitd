@@ -3,7 +3,6 @@ import { getModelToken } from '@nestjs/mongoose';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { UsersService } from './users.service';
 import { User } from '../schemas/user.schema';
-import { Model } from 'mongoose';
 
 describe('UsersService', () => {
   let service: UsersService;
