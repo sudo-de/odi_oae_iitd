@@ -139,7 +139,8 @@ UserSchema.index({ role: 1, department: 1 });
 UserSchema.set('toJSON', {
   virtuals: true,
   versionKey: false,
-  transform: (_: unknown, ret: Record<string, unknown>) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  transform: (_: any, ret: any): any => {
     ret.id = ret._id?.toString?.() ?? ret._id;
     delete ret._id;
     return ret;

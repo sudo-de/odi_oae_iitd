@@ -19,7 +19,7 @@ export class AuthService {
     private emailService: EmailService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<{ user: UserDocument | null; error?: string }> {
+  async validateUser(email: string, password: string): Promise<{ user: Omit<UserDocument, 'password'> | null; error?: string }> {
     console.log(`[AuthService] Validating user with email: ${email}`);
     const user = await this.userModel.findOne({ email }).exec();
     
@@ -41,7 +41,7 @@ export class AuthService {
     
     if (isPasswordValid) {
       const { password: _, ...result } = user.toObject();
-      return { user: result };
+      return { user: result as unknown as Omit<UserDocument, 'password'> };
     }
     
     return { user: null, error: 'wrong_password' };
