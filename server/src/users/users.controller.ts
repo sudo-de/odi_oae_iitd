@@ -125,8 +125,8 @@ export class UsersController {
   }
 
   @Post('bulk-update')
-  bulkUpdate(@Body() updates: Array<{ id: string; data: Partial<CreateUserDto> }>) {
-    return this.usersService.bulkUpdateUsers(updates);
+  async bulkUpdate(@Body() updates: Array<{ id: string; data: Partial<CreateUserDto> }>) {
+    return await this.usersService.bulkUpdateUsers(updates);
   }
 
   @Get('stats/overview')
