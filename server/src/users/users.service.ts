@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import type { BulkWriteResult } from 'mongodb';
 import { User, UserDocument } from '../schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -140,7 +141,7 @@ export class UsersService {
       const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
       
       // Process uploaded files and parse JSON fields
-      const userData: any = {
+      const userData: Record<string, unknown> & { password: string } = {
         ...createUserDto,
         password: hashedPassword,
       };
@@ -341,7 +342,7 @@ export class UsersService {
     return user ? this.transformUserForResponse(user) : null;
   }
 
-  async bulkUpdateUsers(updates: Array<{ id: string; data: Partial<CreateUserDto> }>): Promise<any> {
+  async bulkUpdateUsers(updates: Array<{ id: string; data: Partial<CreateUserDto> }>): Promise<BulkWriteResult> {
     const bulkOps = updates.map(update => {
       if (!Types.ObjectId.isValid(update.id)) {
         throw new BadRequestException(`Invalid user id: ${update.id}`);
@@ -357,7 +358,7 @@ export class UsersService {
     return this.userModel.bulkWrite(bulkOps);
   }
 
-  async getUserStats(): Promise<any> {
+  async getUserStats(): Promise<Array<{ _id: string; count: number; activeCount: number }>> {
     return this.userModel.aggregate([
       {
         $group: {
@@ -431,6 +432,7 @@ export class UsersService {
   }
 
   private async mapChangeToEvent(change: ChangeStreamDocument<UserDocument>): Promise<UserChangeEvent | null> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const documentKey = 'documentKey' in change ? (change as any).documentKey : undefined;
     const rawId = documentKey?._id;
     const idValue = rawId && typeof rawId.toString === 'function' ? rawId.toString() : rawId;
@@ -439,7 +441,7 @@ export class UsersService {
       case 'insert':
       case 'replace':
       case 'update': {
-        let document: any = null;
+        let document: User | null = null;
         if (change.fullDocument) {
           document = this.transformUserForResponse(change.fullDocument);
         } else if (idValue) {
@@ -466,7 +468,7 @@ export class UsersService {
         }
         return {
           type: 'deleted',
-          payload: { _id: idValue },
+          payload: { _id: String(idValue) },
         };
       default:
         return null;
@@ -476,5 +478,5 @@ export class UsersService {
 
 export interface UserChangeEvent {
   type: 'snapshot' | 'created' | 'updated' | 'deleted';
-  payload: any;
+  payload: User[] | User | { _id: string };
 }
