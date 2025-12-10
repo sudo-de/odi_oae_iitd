@@ -48,7 +48,7 @@ jobs:
           echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig.yaml
           export KUBECONFIG=kubeconfig.yaml
           
-          # Option 2: Using cloud provider authentication (uncomment as needed)
+          # Option 2: Using cloud provider authentication (uncomment as needed..)
           # For GKE:
           # gcloud container clusters get-credentials CLUSTER_NAME --zone ZONE --project PROJECT_ID
           # For EKS:
